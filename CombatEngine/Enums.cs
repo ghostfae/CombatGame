@@ -5,9 +5,14 @@ public enum UnitKind
     Mage
 }
 
-public enum Actions 
+public enum SpellKind
 {
+    WSwordHit,
+    WShieldBash,
+    MFrostBolt,
+    MFireSnap
+        /*
     Hit,
     ApplyBuff,
-    Heal
+    Heal*/
 }

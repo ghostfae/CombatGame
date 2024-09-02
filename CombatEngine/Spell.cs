@@ -1,19 +1,20 @@
 ﻿namespace CombatEngine;
 
-public class CombatAction
+public class Spell
 {
-    Actions ActionType { get; }
-    int MaxCooldown { get; }
+    public SpellKind Kind { get; }
+    public int MaxCooldown { get; }
     //int? HitChance { get; }
-    int[] MinMaxDamage { get; }
+    public int[] MinMaxDamage { get; }
 
-    public CombatAction(Actions actionType, int maxCooldown, int maxDamage = 0, int minDamage = 0) 
-    { 
-        ActionType = actionType;
+    public Spell(SpellKind spellKind, int maxCooldown, int maxDamage = 0, int minDamage = 0) 
+    {
+        Kind = spellKind;
         MaxCooldown = maxCooldown;
         MinMaxDamage = [minDamage, maxDamage];
-
     }
+
+
 }
 
 // TODO : Have action types be separate? as Buffs would have a duration, whilst Hits wouldn't
