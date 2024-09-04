@@ -9,16 +9,8 @@ public class UnitState
 {
     public Unit Unit { get; }
     public int Health { get; private set; }
-
-    public IEnumerable<TimedSpell> ReadyActions
-    {
-        get
-        {
-            foreach (var action in TimedSpells)
-                if (action.CooldownTimer == 0)
-                    yield return action;
-        }
-    }
+    public Side AttackSide { get; set; }
+    public bool CanAct { get; set; }
 
     public List<TimedSpell> TimedSpells { get; }
 
@@ -32,6 +24,7 @@ public class UnitState
         Unit = unit;
         Health = unit.Health;
         TimedSpells = unit.AllSpells.Select(action => new TimedSpell(action)).ToList();
+        CanAct = IsAlive();
     }
 
     // only used by the builder
@@ -40,6 +33,21 @@ public class UnitState
         Unit = unit;
         Health = health;
         TimedSpells = timedSpells;
+        CanAct = true;
     }
 
+    public bool IsAlive()
+    {
+        if(Health <= 0) return false;
+        return true;
+    }
+
+}
+
+public static class UnitExtensions
+{
+    public static UnitStateBuilder ModifyState(this Unit unit)
+    {
+        return new UnitStateBuilder(unit.State);
+    }
 }

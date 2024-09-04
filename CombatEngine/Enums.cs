@@ -11,8 +11,16 @@ public enum SpellKind
     WShieldBash,
     MFrostBolt,
     MFireSnap
-        /*
+}
+
+public enum SpellEffect 
+{
     Hit,
-    ApplyBuff,
-    Heal*/
+    Heal
+}
+
+public enum Side
+{ 
+    sideA,
+    sideB
 }
