@@ -7,16 +7,13 @@ public enum UnitKind
 
 public enum SpellKind
 {
-    WSwordHit,
-    WShieldBash,
-    MFrostBolt,
-    MFireSnap
-}
+   // warrior spells
+   SwordHit,
+   ShieldBash,
 
-public enum SpellEffect 
-{
-    Hit,
-    Heal
+   // mage spells
+   FrostBolt,
+   FireSnap
 }
 
 public enum Side

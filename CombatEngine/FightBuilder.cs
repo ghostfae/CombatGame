@@ -16,8 +16,12 @@ public class FightBuilder
         return mage;
     }
 
-    public static Unit[] CreateScenario1v1() 
+    public static Unit[] CreateScenario1V1() 
     {
         return new Unit[] { AddWarrior(Side.Red), AddMage(Side.Blue) };
+    }
+    public static Unit[] CreateScenario2V2()
+    {
+       return new Unit[] { AddWarrior(Side.Red), AddWarrior(Side.Red), AddMage(Side.Blue), AddMage(Side.Blue) };
     }
 }

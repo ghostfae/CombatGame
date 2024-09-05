@@ -2,31 +2,42 @@
 
 public class CombatLog
 {
-   public void Init(IEnumerable<Unit> combatants)
+   public void RoundBegins(IEnumerable<Unit> units, int round)
    {
-      foreach (var unit in combatants)
+      Console.WriteLine();
+      Console.WriteLine($"BEGIN ROUND {round}");
+
+      var sides = units
+         .GroupBy(unit => unit.Side)
+         .Select(group => new
+         {
+            Side = group.Key,
+            Units = group.OrderByDescending(unit => unit.Speed).ToList()
+         });
+
+      foreach (var side in sides)
       {
-         Console.WriteLine($"{(unit.Kind)} has speed of {unit.Speed}.");
+         Console.WriteLine($"Side {side.Side}:");
+;
+         foreach (var unit in side.Units)
+            Console.WriteLine($"{unit} has speed of {unit.Speed} and {unit.CurrentHealth} health.");
       }
-
-      Console.WriteLine();
    }
 
-   public void StartTurn(Unit currentCombatant)
+   public void Turn(Unit unit)
    {
       Console.WriteLine();
-      Console.WriteLine($"It is {currentCombatant.Kind}'s turn.");
-      Console.WriteLine($"{currentCombatant.Kind} has {currentCombatant.CurrentHealth} health.");
+      Console.WriteLine($"It is {unit}'s turn.");
    }
 
-   public void CastSpell(Unit currentCombatant, Spell currentSpell, int damage)
+   public void CastSpell(Unit unit, Unit target, Spell currentSpell, int damage)
    {
-      Console.WriteLine($"{currentCombatant.Kind} cast {currentSpell.Kind} for {damage} damage.");
+      Console.WriteLine($"{unit} cast {currentSpell.Kind} for {damage} damage at {target}.");
    }
 
-   public void TakeDamage(Unit enemyCombatant, int damage)
+   public void TakeDamage(Unit unit, int damage)
    {
-      Console.WriteLine($"{enemyCombatant.Kind} was hit for {damage} damage.");
+      Console.WriteLine($"{unit} was hit for {damage} damage and has {unit.CurrentHealth} health remaining.");
    }
 
    public void Win(Side winningSide)
@@ -34,8 +45,8 @@ public class CombatLog
       Console.WriteLine($"{winningSide} wins!");
    }
 
-   public void UnitDies(Unit target)
+   public void UnitDies(Unit unit)
    {
-      Console.WriteLine($"{target.Kind} dies.");
+      Console.WriteLine($"{unit} dies.");
    }
 }

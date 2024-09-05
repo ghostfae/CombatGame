@@ -12,8 +12,8 @@ public class Tests
    [Test]
    public void TestDamageWorks()
    {
-      var combatants = FightBuilder.CreateScenario1v1();
-      var combat = new Combat(new Random(1), combatants[0], combatants[1]);
+      var combatants = FightBuilder.CreateScenario1V1();
+      var combat = new Combat(combatants[0], combatants[1]);
       Assert.Pass();
    }
 }
