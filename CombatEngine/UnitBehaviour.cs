@@ -3,39 +3,23 @@
 /// <summary>
 /// AI that decided what actions to take
 /// </summary>
-public class UnitBehaviour
+public static class UnitBehaviour
 {
-    public Unit Self { get; }
-    //public Unit? Target { get; set; }
-    public UnitBehaviour(Unit self)
-    {
-        Self = self;
-        //Target = null;
-    }
+   public static Spell SelectSpell(Unit unit)
+   {
+      var readySpells = unit.TimedSpells
+         .Where(spell => spell.CooldownTimer == 0)
+         .ToList();
+      return readySpells
+         .OrderByDescending(spell => spell.Spell.MaxDamage)
+         .First()
+         .Spell;
+      //EXTENSION: add healing spells?
+   }
 
-    private IReadOnlyCollection<TimedSpell> GetReadySpells()
-    {
-        return Self
-            .TimedSpells
-            .Where(spell => spell.CooldownTimer == 0)
-            .ToList();
-    }
-
-    public Spell SelectSpell() 
-    {
-        return GetReadySpells()
-            .OrderByDescending(spell => spell.Spell.MaxDamage)
-            .First()
-            .Spell;
-        //EXTENSION: add healing spells?
-    }
-
-    public Unit SelectEnemyTarget(Unit[] availableTargets) 
-    {
-        return availableTargets
-            .Where(t => t.AttackSide != Self.AttackSide)
-            .OrderBy(t => t.CurrentHealth)
-            .First();
-    }
+   public static Unit SelectEnemy(IEnumerable<Unit> availableTargets, Unit self)
+   {
+      var enemies = availableTargets.Where(t => t.Side != self.Side).ToArray();
+      return enemies.First();
+   }
 }
-

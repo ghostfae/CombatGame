@@ -1,27 +1,23 @@
-﻿using CombatEngine;
-
-namespace CombatConsole;
+﻿namespace CombatEngine;
 
 public class FightBuilder
 {
     public static Unit AddWarrior(Side side) 
     {
-        var warrior = ClassBuilder.CreateWarrior();
-        warrior.State.AttackSide = side;
+        var warrior = ClassBuilder.CreateWarrior(side);
 
         return warrior;
     }
 
     public static Unit AddMage(Side side)
     {
-        var mage = ClassBuilder.CreateMage();
-        mage.State.AttackSide = side;
-
+        var mage = ClassBuilder.CreateMage(side);
+        
         return mage;
     }
 
-    public static Unit[] Scenario1v1() 
+    public static Unit[] CreateScenario1v1() 
     {
-        return new Unit[] { AddWarrior(Side.sideA), AddMage(Side.sideB) };
+        return new Unit[] { AddWarrior(Side.Red), AddMage(Side.Blue) };
     }
 }

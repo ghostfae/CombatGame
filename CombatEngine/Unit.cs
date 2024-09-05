@@ -1,35 +1,50 @@
-﻿namespace CombatEngine;
+﻿using System.Data;
+
+namespace CombatEngine;
 
 public class Unit
 {
-    public UnitKind Kind { get; }
-    public int Health { get; }
-    public int Speed { get; }
-    public IReadOnlyCollection<Spell> AllSpells { get; }
-    public UnitState State { get; private set; }
-    public UnitBehaviour Behaviour { get; }
-    public Side AttackSide => State.AttackSide;
-    public int CurrentHealth => State.Health;
-    public IReadOnlyCollection<TimedSpell> TimedSpells => State.TimedSpells;
+   public UnitKind Kind { get; }
+   public int InitialHealth { get; }
+   public int Speed { get; }
+   public IReadOnlyCollection<Spell> AllSpells { get; }
+   public UnitState State { get; private set; }
 
-    private Unit(UnitKind kind, int health, int speed, List<Spell> allSpells) 
-    {
-        Kind = kind;
-        Health = health;
-        Speed = speed;
-        AllSpells = allSpells;
+   public Side Side => State.Side;
+   public int CurrentHealth => State.Health;
+   public bool IsAlive() => State.IsAlive();
 
-        State = UnitState.Create(this);
-        Behaviour = new UnitBehaviour(this);
-    }
+   public IReadOnlyCollection<TimedSpell> TimedSpells => State.TimedSpells;
 
-    public Unit(UnitKind kind, int health, int speed, params Spell[] allSpells) 
-        : this(kind, health, speed, allSpells.ToList())
-    {
-    }
+   private Unit(UnitKind kind, int initialHealth, int speed, Side side, List<Spell> allSpells)
+   {
+      Kind = kind;
+      InitialHealth = initialHealth;
+      Speed = speed;
+      AllSpells = allSpells;
 
-    public void UpdateState(UnitState state)
-    {
-        State = state;
-    }
+      State = UnitState.Create(this, side, initialHealth);
+   }
+
+   public Unit(UnitKind kind, int initialHealth, int speed, Side side, params Spell[] allSpells)
+      : this(kind, initialHealth, speed, side, allSpells.ToList())
+   {
+   }
+
+   public void UpdateState(UnitState state)
+   {
+      State = state;
+   }
+
+   public (Unit target, Spell spell) ChooseTargetAndSpell(IReadOnlyCollection<Unit> availableTargets)
+   {
+      var selectedSpell = UnitBehaviour.SelectSpell(this);
+      var selectedTarget = UnitBehaviour.SelectEnemy(availableTargets, this);
+      return (selectedTarget, selectedSpell);
+   }
+
+   public override string ToString()
+   {
+      return $"{nameof(Kind)}: {Kind}";
+   }
 }

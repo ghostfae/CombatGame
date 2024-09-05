@@ -8,22 +8,24 @@ public static class ClassBuilder
     private static Spell FrostBolt = new Spell(SpellKind.MFrostBolt, 0, 10, 10);
     private static Spell FireSnap = new Spell(SpellKind.MFireSnap, 2, 5, 5);
 
-    public static Unit CreateWarrior() 
+    public static Unit CreateWarrior(Side side) 
     {
         return new Unit(
             kind: UnitKind.Warrior, 
-            health: 100, 
+            initialHealth: 100, 
             speed: 6, 
+            side: side,
             SwordHit,
             ShieldBash);
     }
 
-    public static Unit CreateMage()
+    public static Unit CreateMage(Side side)
     {
         return new Unit(
             kind: UnitKind.Mage,
-            health: 80,
+            initialHealth: 80,
             speed: 5,
+            side: side,
             FrostBolt,
             FireSnap);
     }

@@ -21,6 +21,6 @@ public enum SpellEffect
 
 public enum Side
 { 
-    sideA,
-    sideB
+    Red,
+    Blue
 }

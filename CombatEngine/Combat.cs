@@ -1,80 +1,95 @@
-﻿using CombatEngine;
-using System.Diagnostics;
+﻿namespace CombatEngine;
 
-namespace CombatConsole;
-
-public class CombatLog
-{
-
-}
-
-/// <summary>
-/// An instance is created of each round.
-/// Units that made their move are removed.
-/// </summary>
-public class CombatOrder
-{
-    public CombatOrder()
-    {
-        
-    }
-}
-
-/// <summary>
-/// An instance of combat is created at the start of the battle.
-/// It is then prodded until one side is dead.
-/// </summary>
 public class Combat
 {
-    private Random _random;
-    private CombatLog _log;
-    private Unit[] _combatants;
+   private readonly Random _random;
+   private readonly CombatLog _log;
+   private readonly List<Unit> _combatants;
 
-    public Combat(Random random, CombatLog log, params Unit[] combatants)
-    {
-        _random = random;
-        _log = log;
-        _combatants = combatants;
-    }
+   public Combat(Random random, params Unit[] combatants)
+   {
+      _random = random;
+      _log = new CombatLog();
+      _combatants = combatants.ToList();
+   }
 
-    public List<Unit> UnitsByInitiative()
-    {
-        return _combatants
-            .OrderByDescending(combatant => combatant.Speed)
-            .ToList();
-    }
+   public void Run()
+   {
+      var order = _combatants
+         .OrderByDescending(combatant => combatant.Speed)
+         .ToList();
 
-    public Unit RotateCombatants() 
-    {        
-        var currentCombatant = _combatants[0];
-        NewTurn.Attacker = currentCombatant;
-        _combatants = MoveInitiative();
-        return currentCombatant;
-    }
+      _log.Init(order);
 
-    public Unit GetLastCombatant() 
-    {
-        return _combatants[_combatants.Length - 1];
-    }
+      while (true)
+      {
+         foreach (var unit in order)
+         {
+            if (!PerformTurn(unit))
+            {
+               // someone dead, lets check if we should continue
+               var winningSide = TryGetWinningSide(order);
+               if (winningSide != null)
+               {
+                  _log.Win(winningSide.Value);
+                  return;
+               }
+            }
+         }
+      }
+   }
 
-    private UnitState CastSpell(Unit caster, Spell spell, Unit target) 
-    {
-        // EXTENSION - have a % cast failed?
-        ApplySpell(spell, target);
-        NewTurn.Target = target;
-        return caster.ModifyState().MarkCooldown(spell.Kind).Build();        
-    }
+   private Side? TryGetWinningSide(IEnumerable<Unit> order)
+   {
+      var survivingSides = order
+         .Where(u => u.CurrentHealth > 0)
+         .GroupBy(u => u.Side)
+         .Select(g => g.Key)
+         .ToArray();
 
-    private UnitState ApplySpell(Spell spell, Unit target) 
-    {
-        var damage = _random.Next(spell.MinDamage, spell.MaxDamage);
-        return target.ModifyState().Hit(damage).Build();
-    }
+      if (survivingSides.Length == 1)
+      {
+         return survivingSides[0];
+      }
+      return null;
+   }
 
-    public Turn TakeTurn(Unit turnTaker) 
-    {
-        CastSpell(turnTaker, turnTaker.Behaviour.SelectSpell(), turnTaker.Behaviour.SelectEnemyTarget(_combatants));
-        return NewTurn;
-    
-    }
+   /// <returns>true if the combat should continue, false if one side wins</returns>
+   private bool PerformTurn(Unit unit)
+   {
+      _log.StartTurn(unit);
+      // 1. apply dots or hots if any
+      // TODO:
+
+      // 2. choose target(s) and spells
+      var (target, spell) = unit.ChooseTargetAndSpell(_combatants);
+
+      // 3. cast
+      var damage = CastSpell(unit, spell);
+      ApplySpell(target, spell, damage);
+
+      var isTargetAlive = target.IsAlive();
+      if (!isTargetAlive)
+      {
+         _log.UnitDies(target);
+      }
+      return isTargetAlive;
+   }
+
+   public int CastSpell(Unit caster, Spell spell)
+   {
+      // EXTENSION - have a % cast failed?
+      var damage = _random.Next(spell.MinDamage, spell.MaxDamage);
+      _log.CastSpell(caster, spell, damage);
+
+      caster.ModifyState(builder => builder.MarkCooldown(spell.Kind));
+      return damage;
+   }
+
+   public void ApplySpell(Unit target, Spell spell, int damage)
+   {
+      // TODO: apply defences etc
+      _log.TakeDamage(target, damage);
+      target.ModifyState(builder => builder.Hit(damage));
+   }
 }

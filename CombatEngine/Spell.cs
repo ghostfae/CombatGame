@@ -15,6 +15,12 @@ public class Spell
         MinDamage = minDamage;
         MaxDamage = maxDamage;
     }
+
+    public override string ToString()
+    {
+       return
+          $"{nameof(Kind)}: {Kind}, {nameof(MaxCooldown)}: {MaxCooldown}, {nameof(MinDamage)}: {MinDamage}, {nameof(MaxDamage)}: {MaxDamage}";
+    }
 }
 
 // TODO : Have action types be separate? as Buffs would have a duration, whilst Hits wouldn't
