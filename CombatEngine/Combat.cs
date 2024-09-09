@@ -19,8 +19,15 @@ public class Combat
    {
       while (true)
       {
-         _log.RoundBegins(GetAliveUnits(), _round);
+         _log.RoundBegins(_round);
+         _log.UpkeepBegins();
+         foreach (var aliveUnit in GetAliveUnits())
+         {
+            aliveUnit.Upkeep();
+         }
+         _log.UpkeepEnds();
 
+         _log.ReportSides(GetAliveUnits());
          var winningSide = TryGetWinningSide();
          if (winningSide != null)
          {
@@ -56,6 +63,7 @@ public class Combat
       var (target, spell) = unit.ChooseTargetAndSpell(GetAliveUnits());
 
       var damage = CastSpell(unit, target, spell);
+      // EXTENSION - have a % cast failed?
       ApplySpell(target, spell, damage);
 
       if (target.CurrentHealth <= 0)
@@ -64,22 +72,45 @@ public class Combat
       }
    }
 
-   public int CastSpell(Unit caster, Unit target, Spell spell)
+   public int? CastSpell(Unit caster, Unit target, Spell spell)
    {
-      // EXTENSION - have a % cast failed?
-      var damage = Rng.Random.Next(spell.MinDamage, spell.MaxDamage);
-      _log.CastSpell(caster, target, spell, damage);
+      int? amount = null;
+      if (spell.IsOverTime)
+      {
+         _log.CastSpell(caster, target, spell);
+      }
+      else
+      {
+         amount = spell.SpellEffect.RollRandomAmount();
+         _log.CastSpell(caster, target, spell, amount);
+      }
 
       caster.ModifyState(builder => builder.MarkCooldown(spell.Kind));
-      return damage;
+      return amount;
    }
 
-   public void ApplySpell(Unit target, Spell spell, int damage)
+   public void ApplySpell(Unit target, Spell spell, int? amount)
    {
       // TODO: apply defences etc
-      target.ModifyState(builder => builder.Hit(damage));
-      _log.TakeDamage(target, damage);
+      if (spell.IsOverTime)
+      {
+         target.ModifyState(builder => builder.AttachOverTime(spell.SpellEffect));
+      }
+      else
+      {
+         if (spell.SpellEffect.IsHarm) // amount is never null for direct spell
+         {
+            target.ModifyState(builder => builder.Hit(amount!.Value));
+            _log.TakeDamage(target, amount);
+         }
+         else
+         {
+            target.ModifyState(builder => builder.Heal(amount!.Value));
+            _log.HealDamage(target, amount);
+         }
+      }
    }
+
 
    public void ResetRound()
    {

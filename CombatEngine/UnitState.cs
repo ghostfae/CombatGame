@@ -5,43 +5,46 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CombatEngine;
+
 public class UnitState
 {
-    public Unit Unit { get; }
-    public int Health { get; private set; }
-    public Side Side { get; set; }
-    public bool CanAct { get; set; }
+   public Unit Unit { get; }
+   public int Health { get; private set; }
+   public Side Side { get; set; }
+   public bool CanAct { get; set; }
+   public List<TimedOverTimeEffect> OverTimeEffects { get; set; }
+   public List<TimedSpell> TimedSpells { get; }
 
-    public List<TimedSpell> TimedSpells { get; }
+   public static UnitState Create(Unit unit, Side side, int health)
+   {
+      return new UnitState(unit, side, health);
+   }
 
-    public static UnitState Create(Unit unit, Side side, int health) 
-    {
-        return new UnitState(unit, side, health);
-    }
+   private UnitState(Unit unit, Side side, int health)
+   {
+      Unit = unit;
+      Side = side;
+      Health = health;
+      TimedSpells = unit.AllSpells.Select(action => new TimedSpell(action)).ToList();
+      CanAct = IsAlive();
+      OverTimeEffects = new List<TimedOverTimeEffect>();
+   }
 
-    private UnitState(Unit unit, Side side, int health)
-    {
-        Unit = unit;
-        Side = side;
-        Health = health;
-        TimedSpells = unit.AllSpells.Select(action => new TimedSpell(action)).ToList();
-        CanAct = IsAlive();
-    }
+   // only used by the builder
+   internal UnitState(Unit unit, int health, List<TimedSpell> timedSpells, Side side, List<TimedOverTimeEffect> overTimeEffects)
+   {
+      Unit = unit;
+      Health = health;
+      TimedSpells = timedSpells;
+      Side = side;
+      CanAct = true;
+      OverTimeEffects = overTimeEffects;
+   }
 
-    // only used by the builder
-    internal UnitState(Unit unit, int health, List<TimedSpell> timedSpells, Side side)
-    {
-        Unit = unit;
-        Health = health;
-        TimedSpells = timedSpells;
-        Side = side;
-        CanAct = true;
-    }
-
-    public bool IsAlive()
-    {
-       return Health > 0;
-    }
+   public bool IsAlive()
+   {
+      return Health > 0;
+   }
 }
 
 public static class UnitExtensions

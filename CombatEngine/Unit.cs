@@ -49,6 +49,11 @@ public class Unit
       State = state;
    }
 
+   public void Upkeep()
+   {
+      this.ModifyState(builder => builder.UpkeepOverTime());
+   }
+
    public void UpdateTick()
    {
       this.ModifyState(builder => builder.Tick());
@@ -57,9 +62,15 @@ public class Unit
    public (Unit target, Spell spell) ChooseTargetAndSpell(IEnumerable<Unit> availableTargets)
    {
       var selectedSpell = UnitBehaviour.SelectSpell(this);
-      var selectedTarget = UnitBehaviour.SelectEnemy(availableTargets, this);
+
+      var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
+         UnitBehaviour.SelectEnemy(availableTargets, this) 
+         : UnitBehaviour.SelectAlly(availableTargets, this);
+
       return (selectedTarget, selectedSpell);
    }
+
+
 
    public override string ToString()
    {

@@ -13,7 +13,11 @@ public enum SpellKind
 
    // mage spells
    FrostBolt,
-   FireSnap
+   FireSnap,
+
+   // universal spells
+   HealthPotion,
+   HealthDurationPotion
 }
 
 public enum Side

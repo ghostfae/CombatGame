@@ -8,7 +8,7 @@ namespace CombatEngine;
 
 public static class Rng
 {
-   public static readonly Random Random = new(1);
+   public static readonly Random Random = new();
 }
 
 public static class NameGenerator

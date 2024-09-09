@@ -6,9 +6,9 @@ public class TimedSpell
     public int CooldownTimer { get; private set; }
 
     public TimedSpell(Spell spell)
+       : this(spell, 0)
+    // when we start, nothing is on cooldown
     {
-        Spell = spell;
-        CooldownTimer = 0; // when we start, nothing is on cooldown
     }
 
     private TimedSpell(Spell spell, int cooldownTimer)
