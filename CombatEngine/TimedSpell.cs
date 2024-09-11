@@ -1,4 +1,7 @@
 ﻿namespace CombatEngine;
+/// <summary>
+/// spell class that stores the current cooldown time on each spell
+/// </summary>
 
 public class TimedSpell
 {

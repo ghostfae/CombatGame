@@ -1,21 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CombatEngine;
-
+﻿namespace CombatEngine;
+/// <summary>
+/// state that updates whenever a unit casts or reacts to a spell;
+/// a mutable version of the unit
+/// </summary>
 public class UnitState
 {
    public Unit Unit { get; }
    public int Health { get; private set; }
    public Side Side { get; set; }
    public bool CanAct { get; set; }
+   public int CanActTimer { get; set; }
    public List<TimedOverTimeEffect> OverTimeEffects { get; set; }
    public List<TimedSpell> TimedSpells { get; }
 
-   public static UnitState Create(Unit unit, Side side, int health)
+   public static UnitState InitialCreate(Unit unit, Side side, int health)
    {
       return new UnitState(unit, side, health);
    }
@@ -27,23 +25,33 @@ public class UnitState
       Health = health;
       TimedSpells = unit.AllSpells.Select(action => new TimedSpell(action)).ToList();
       CanAct = IsAlive();
+      CanActTimer = 0;
       OverTimeEffects = new List<TimedOverTimeEffect>();
    }
 
    // only used by the builder
-   internal UnitState(Unit unit, int health, List<TimedSpell> timedSpells, Side side, List<TimedOverTimeEffect> overTimeEffects)
+   internal UnitState(Unit unit, int health, List<TimedSpell> timedSpells,
+      Side side, List<TimedOverTimeEffect> overTimeEffects, bool canAct, int canActTimer)
    {
       Unit = unit;
       Health = health;
       TimedSpells = timedSpells;
       Side = side;
-      CanAct = true;
       OverTimeEffects = overTimeEffects;
+      CanAct = canAct;
+      CanActTimer = canActTimer;
    }
 
    public bool IsAlive()
    {
       return Health > 0;
+   }
+
+   public override string ToString()
+   {
+      return
+         $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Health)}: {Health}," +
+         $" {nameof(Side)}: {Side}, {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
 }
 

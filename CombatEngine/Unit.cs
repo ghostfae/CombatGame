@@ -1,5 +1,7 @@
 ﻿namespace CombatEngine;
-
+/// <summary>
+/// creates the combat unit and the initial state it has before the game starts
+/// </summary>
 public class RoundState
 {
    public bool CanAct { get; set; } = true;
@@ -17,7 +19,7 @@ public class Unit
 
    public Side Side => State.Side;
    public int CurrentHealth => State.Health;
-   public bool IsAlive() => State.IsAlive();
+   //public bool IsAlive() => State.IsAlive();
 
    public bool CanAct() => RoundState.CanAct;
 
@@ -35,7 +37,7 @@ public class Unit
       Speed = speed;
       AllSpells = allSpells;
       Name = name;
-      State = UnitState.Create(this, side, initialHealth);
+      State = UnitState.InitialCreate(this, side, initialHealth);
       RoundState = new RoundState();
    }
 
@@ -51,12 +53,15 @@ public class Unit
 
    public void Upkeep()
    {
-      this.ModifyState(builder => builder.UpkeepOverTime());
+      this.ModifyState(builder => builder
+         .UpkeepOverTime()
+         .UpkeepCanAct());
    }
 
    public void UpdateTick()
    {
       this.ModifyState(builder => builder.Tick());
+      MarkAsTakenTurn();
    }
 
    public (Unit target, Spell spell) ChooseTargetAndSpell(IEnumerable<Unit> availableTargets)
@@ -69,9 +74,7 @@ public class Unit
 
       return (selectedTarget, selectedSpell);
    }
-
-
-
+   
    public override string ToString()
    {
       return $"{Kind} {Name}";

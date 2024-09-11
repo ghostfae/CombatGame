@@ -1,8 +1,12 @@
 ﻿namespace CombatEngine;
+/// <summary>
+/// creates the effect that a given spell would have on the target
+/// </summary>
 public enum SpellEffectKind
 {
    Direct,
-   OverTime
+   OverTime,
+   Freeze
 }
 public class SpellEffect
 {
@@ -20,9 +24,10 @@ public class SpellEffect
    /// Crit chance in percents
    /// </summary>
    public int CritChance { get; }
+   public int CritModifier { get; }
 
    private SpellEffect(SpellEffectKind kind, bool isHarm, int minEffect, int maxEffect,
-      int? duration, int critChance)
+      int? duration, int critChance, int critModifier)
    {
       Kind = kind;
       IsHarm = isHarm;
@@ -30,31 +35,38 @@ public class SpellEffect
       MaxEffect = maxEffect;
       Duration = duration;
       CritChance = critChance;
+      CritModifier = critModifier;
    }
 
-   public static SpellEffect CreateDirectDamage(int minEffect, int maxEffect, int critChance)
+   public static SpellEffect CreateDirectDamage(int minEffect, int maxEffect, int critChance, int critModifier)
    {
       return new SpellEffect
-         (SpellEffectKind.Direct, true, minEffect, maxEffect, null, critChance);
+         (SpellEffectKind.Direct, true, minEffect, maxEffect, null, critChance, critModifier);
    }
 
-   public static SpellEffect CreateDirectHeal(int minEffect, int maxEffect, int critChance)
+   public static SpellEffect CreateDirectHeal(int minEffect, int maxEffect, int critChance, int critModifier)
    {
       return new SpellEffect
-         (SpellEffectKind.Direct, false, minEffect, maxEffect, null, critChance);
+         (SpellEffectKind.Direct, false, minEffect, maxEffect, null, critChance, critModifier);
    }
 
 
    public static SpellEffect CreateOverTimeDamage(int minEffect, int maxEffect, int duration)
    {
       return new SpellEffect
-         (SpellEffectKind.OverTime, true, minEffect, maxEffect, duration, 0);
+         (SpellEffectKind.OverTime, true, minEffect, maxEffect, duration, 0, 0);
    }
 
    public static SpellEffect CreateOverTimeHeal(int minEffect, int maxEffect, int duration)
    {
       return new SpellEffect
-         (SpellEffectKind.OverTime, false, minEffect, maxEffect, duration, 0);
+         (SpellEffectKind.OverTime, false, minEffect, maxEffect, duration, 0, 0);
+   }
+
+   public static SpellEffect CreateSkipTurn()
+   {
+      return new SpellEffect
+         (SpellEffectKind.Freeze, false, 0, 0, 2, 0, 0);
    }
 
    public int RollRandomAmount()

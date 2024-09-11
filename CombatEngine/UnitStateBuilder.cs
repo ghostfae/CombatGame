@@ -1,14 +1,17 @@
-﻿using static CombatEngine.UnitState;
-
-namespace CombatEngine;
+﻿namespace CombatEngine;
+/// <summary>
+/// builds a new unit state whenever the current unit state needs to be modified
+/// </summary>
 
 public class UnitStateBuilder
 {
    private readonly List<TimedSpell> _timedSpells;
-   private readonly List<TimedOverTimeEffect> _overTimeEffects; // TODO make class
+   private readonly List<TimedOverTimeEffect> _overTimeEffects;
    private readonly Unit _unit;
    private int _health;
    private Side _side;
+   private bool _canAct;
+   private int _canActTimer;
 
    public UnitStateBuilder(UnitState state)
    {
@@ -17,6 +20,8 @@ public class UnitStateBuilder
       _timedSpells = state.TimedSpells.Select(spell => spell.Clone()).ToList(); // deep clone
       _side = state.Side;
       _overTimeEffects = state.OverTimeEffects.Select(effect => effect.Clone()).ToList(); // TODO deep clone
+      _canAct = state.CanAct;
+      _canActTimer = state.CanActTimer;
    }
 
    public UnitStateBuilder Hit(int effect)
@@ -74,12 +79,10 @@ public class UnitStateBuilder
             if (item.Effect.IsHarm)
             {
                Hit(amount);
-               Console.WriteLine($"{_unit} takes damage for {amount}.");
             }
             else
             {
                Heal(amount);
-               Console.WriteLine($"{_unit} heals for {amount}.");
             }
          }
       }
@@ -92,6 +95,28 @@ public class UnitStateBuilder
       return this;
    }
 
+   public UnitStateBuilder UpkeepCanAct()
+   {
+      if (_canActTimer > 0)
+      {
+         _canActTimer--;
+         _canAct = false;
+      }
+      else
+      {
+         _canAct = true;
+      }
+
+      return this;
+   }
+
+   public UnitStateBuilder Freeze(int duration)
+   {
+      _canAct = false;
+      _canActTimer = duration;
+      return this;
+   }
+
    public UnitStateBuilder SetSide(Side side)
    {
       _side = side;
@@ -100,7 +125,10 @@ public class UnitStateBuilder
 
    public UnitState Build()
    {
-      return new UnitState(_unit, _health, _timedSpells, _side, _overTimeEffects);
+      var state = new UnitState(_unit, _health, _timedSpells,
+         _side, _overTimeEffects, _canAct, _canActTimer); 
+      //Console.WriteLine($"Built {state}");
+      return state;
    }
 
 

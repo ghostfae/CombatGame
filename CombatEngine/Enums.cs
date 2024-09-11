@@ -1,4 +1,9 @@
 ﻿namespace CombatEngine;
+
+/// <summary>
+/// stores enums for unit and spell details
+/// </summary>
+
 public enum UnitKind
 {
     Warrior,

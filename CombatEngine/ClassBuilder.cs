@@ -1,5 +1,8 @@
 namespace CombatEngine;
 
+/// <summary>
+/// a factory that builds units by combat types and sets their battle side
+/// </summary>
 public static class ClassBuilder 
 {
     public static Unit CreateWarrior(Side side)
@@ -12,7 +15,8 @@ public static class ClassBuilder
           name: NameGenerator.GenerateName(),
             SpellBook.CreateSwordHit(),
           SpellBook.CreateShieldBash(),
-          SpellBook.CreateHealthPotion());
+          SpellBook.CreateHealthPotion(),
+          SpellBook.CreateHealthDurationPotion());;
     }
 
     public static Unit CreateMage(Side side)

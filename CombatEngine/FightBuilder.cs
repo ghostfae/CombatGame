@@ -1,5 +1,7 @@
 ﻿namespace CombatEngine;
-
+/// <summary>
+/// adds units to combat, and creates battle scenarios
+/// </summary>
 public class FightBuilder
 {
     public static Unit AddWarrior(Side side) 
@@ -18,10 +20,10 @@ public class FightBuilder
 
     public static Unit[] CreateScenario1V1() 
     {
-        return new Unit[] { AddWarrior(Side.Red), AddMage(Side.Blue) };
+        return [AddWarrior(Side.Red), AddMage(Side.Blue)];
     }
     public static Unit[] CreateScenario2V2()
     {
-       return new Unit[] { AddWarrior(Side.Red), AddWarrior(Side.Red), AddMage(Side.Blue), AddMage(Side.Blue) };
+       return [AddWarrior(Side.Red), AddWarrior(Side.Blue), AddMage(Side.Red), AddMage(Side.Blue)];
     }
 }

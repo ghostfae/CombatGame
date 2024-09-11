@@ -1,38 +1,45 @@
 ﻿namespace CombatEngine;
-
+/// <summary>
+/// engine that deals with all the actions taken within combat,
+/// handles unit turns and rounds
+/// </summary>
 public class Combat
 {
-   private readonly CombatLog _log;
+   private readonly ICombatLog _combatLog;
+   private readonly ICombatListener _combatListener;
    private readonly List<Unit> _units;
 
    private int _round;
 
-   public Combat(params Unit[] combatants)
+   public Combat(ICombatListener combatListener, ICombatLog log, params Unit[] combatants)
    {
-      _log = new CombatLog();
+      _combatListener = combatListener;
+      _combatLog = log;
       _units = combatants.ToList();
 
       _round = 1;
    }
 
-   public void Run()
+   public IEnumerable<Unit> Run()
    {
       while (true)
       {
-         _log.RoundBegins(_round);
-         _log.UpkeepBegins();
+         _combatLog.RoundBegins(_round);
+         _combatLog.UpkeepBegins();
          foreach (var aliveUnit in GetAliveUnits())
          {
             aliveUnit.Upkeep();
          }
-         _log.UpkeepEnds();
+         _combatLog.UpkeepEnds();
 
-         _log.ReportSides(GetAliveUnits());
+         _combatLog.ReportSides(GetAliveUnits());
          var winningSide = TryGetWinningSide();
          if (winningSide != null)
          {
-            _log.Win(winningSide.Value);
-            return;
+            _combatLog.TotalRounds(_round);
+            _combatLog.Win(winningSide.Value);
+            _combatLog.Winners(GetAliveUnits());
+            return GetAliveUnits();
          }
 
          var unit = TryGetNextUnit();
@@ -40,25 +47,30 @@ public class Combat
          {
             PerformTurn(unit);
             unit = TryGetNextUnit();
+
+            // TODO: extract function
+            winningSide = TryGetWinningSide();
+            if (winningSide != null)
+            {
+               _combatLog.TotalRounds(_round);
+               _combatLog.Win(winningSide.Value);
+               _combatLog.Winners(GetAliveUnits());
+               return GetAliveUnits();
+            }
          }
 
+         _combatListener.EndOfRound(_round);
          ResetRound();
          _round++;
-         // DEBUG
-         Console.ReadLine();
       }
    }
 
    /// <returns>true if the combat should continue, false if one side wins</returns>
    private void PerformTurn(Unit unit)
    {
-      _log.Turn(unit);
+      _combatLog.Turn(unit);
 
       unit.UpdateTick();
-      unit.MarkAsTakenTurn();
-
-      // 1. apply dots or hots if any
-      // TODO:
 
       var (target, spell) = unit.ChooseTargetAndSpell(GetAliveUnits());
 
@@ -68,55 +80,121 @@ public class Combat
 
       if (target.CurrentHealth <= 0)
       {
-         _log.UnitDies(target);
+         _combatLog.UnitDies(target);
       }
    }
 
-   public int? CastSpell(Unit caster, Unit target, Spell spell)
+   private int? CastSpell(Unit caster, Unit target, Spell spell)
    {
       int? amount = null;
       if (spell.IsOverTime)
       {
-         _log.CastSpell(caster, target, spell);
+         _combatLog.CastSpell(caster, target, spell);
       }
       else
       {
          amount = spell.SpellEffect.RollRandomAmount();
-         _log.CastSpell(caster, target, spell, amount);
+         _combatLog.CastSpell(caster, target, spell, amount);
       }
 
       caster.ModifyState(builder => builder.MarkCooldown(spell.Kind));
       return amount;
    }
-
-   public void ApplySpell(Unit target, Spell spell, int? amount)
+   private void ApplySpell(Unit target, Spell spell, int? amount)
    {
       // TODO: apply defences etc
       if (spell.IsOverTime)
       {
-         target.ModifyState(builder => builder.AttachOverTime(spell.SpellEffect));
+         ApplyOverTimeSpell(target, spell);
       }
       else
       {
-         if (spell.SpellEffect.IsHarm) // amount is never null for direct spell
+         ApplyDirectHitSpell(target, spell, amount!.Value);
+      }
+   }
+   private void ApplyDirectHitSpell(Unit target, Spell spell, int amount)
+   {
+      if (DetectCrit(spell))
+      {
+         amount *= spell.SpellEffect.CritModifier;
+         ApplyCritEffect(target, spell);
+      }
+      ApplyDirectHitOrHeal(target, spell, amount);
+   }
+
+   private void ApplyCritEffect(Unit target, Spell spell)
+   {
+      if (spell.CritEffect != null)
+      {
+         if (spell.CritEffect.Kind == SpellEffectKind.OverTime)
          {
-            target.ModifyState(builder => builder.Hit(amount!.Value));
-            _log.TakeDamage(target, amount);
+            AttachOverTime(target, spell.CritEffect);
          }
-         else
+         else if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
          {
-            target.ModifyState(builder => builder.Heal(amount!.Value));
-            _log.HealDamage(target, amount);
+            ApplyFreezeSpell(target, spell.CritEffect);
          }
       }
    }
 
+   private void ApplyDirectHitOrHeal(Unit target, Spell spell, int amount)
+   {
+      if (spell.SpellEffect.IsHarm)
+      {
+         DamageUnit(target, amount);
+      }
+      else
+      {
+         HealUnit(target, amount);
+      }
+   }
 
-   public void ResetRound()
+   private void ApplyOverTimeSpell(Unit target, Spell spell)
+   {
+      AttachOverTime(target, spell.SpellEffect);
+   }
+
+   private void ApplyFreezeSpell(Unit target, SpellEffect spell)
+   {
+      target.ModifyState(builder => builder.Freeze(spell.Duration!.Value));
+   }
+
+   private void AttachOverTime(Unit target, SpellEffect effect)
+   {
+      target.ModifyState(builder => builder.AttachOverTime(effect));
+   }
+
+   private void DamageUnit(Unit target, int amount)
+   {
+      target.ModifyState(builder => builder.Hit(amount));
+      _combatLog.TakeDamage(target, amount);
+   }
+
+   private void HealUnit(Unit target, int amount)
+   {
+      target.ModifyState(builder => builder.Heal(amount));
+      _combatLog.HealDamage(target, amount);
+   }
+
+   private bool DetectCrit(Spell spell)
+   {
+      if (Rng.Random.Next(0, 100) <= spell.SpellEffect.CritChance)
+      {
+         _combatLog.Crit(spell);
+         return true;
+      }
+
+      return false;
+   }
+
+   private void ResetRound()
    {
       foreach (var unit in _units)
       {
-         unit.ResetRound();
+         if (unit.State.CanAct || unit.State.CanActTimer == 0)
+         {
+            unit.ResetRound();
+         }
       }
    }
 
@@ -125,14 +203,14 @@ public class Combat
       return _units.Where(unit => unit.CurrentHealth > 0);
    }
 
-   public Unit? TryGetNextUnit()
+   private Unit? TryGetNextUnit()
    {
       return _units
          .Where(unit => unit.CanAct() && unit.CurrentHealth > 0)
          .MaxBy(unit => unit.Speed);
    }
 
-   public Side? TryGetWinningSide()
+   private Side? TryGetWinningSide()
    {
       var survivingSides = _units
          .Where(u => u.CurrentHealth > 0)

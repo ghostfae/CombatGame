@@ -1,8 +1,9 @@
-﻿using System.Text;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
-
-public class CombatLog
+/// <summary>
+/// logs each stage of a round and every action taken within the round
+/// </summary>
+public class ConsoleCombatLog : ICombatLog
 {
    public void RoundBegins(int round)
    {
@@ -35,9 +36,11 @@ public class CombatLog
       foreach (var side in sides)
       {
          Console.WriteLine($"Side {side.Side}:");
-         ;
          foreach (var unit in side.Units)
-            Console.WriteLine($"{unit} has speed of {unit.Speed} and {unit.CurrentHealth} health.");
+         {
+            string canAct = unit.CanAct() ? "can act" : "can't act";
+            Console.WriteLine($"{unit} has speed of {unit.Speed} and {unit.CurrentHealth} health. They {canAct}.");
+         }
       }
    }
 
@@ -86,8 +89,26 @@ public class CombatLog
       Console.WriteLine($"{winningSide} wins!");
    }
 
+   public void Winners(IEnumerable<Unit> winningUnits)
+   {
+      Console.WriteLine($"The winners are:");
+      foreach (var unit in winningUnits)
+      {
+         Console.WriteLine($"{unit}");
+      }
+   }
+
+   public void TotalRounds(int totalRounds)
+   {
+   }
+
    public void UnitDies(Unit unit)
    {
       Console.WriteLine($"{unit} dies.");
+   }
+
+   public void Crit(Spell spell)
+   {
+      Console.WriteLine($"{spell.Kind} has crit!");
    }
 }
