@@ -2,135 +2,121 @@
 
 public class Combat
 {
-   public readonly ICombatLog CombatLog;
-   public readonly ICombatListener CombatListener;
+   //public readonly ICombatLog CombatLog;
+   //public readonly ICombatListener CombatListener;
    private readonly List<UnitState> _units;
 
-   public Combat(ICombatListener combatListener, ICombatLog log, params UnitState[] combatants)
+   public Combat( params UnitState[] combatants)
    {
-      CombatListener = combatListener;
-      CombatLog = log;
+      //CombatListener = combatListener;
+      //CombatLog = log;
       _units = combatants.ToList();
    }
 
    /// <returns>true if the combat should continue, false if one side wins</returns>
-   public void PerformTurn(UnitState unit)
-   {
-      CombatLog.Turn(unit);
+   
 
-      unit.UpdateTick();
-
-      var (target, spell) = unit.Unit.ChooseTargetAndSpell(GetAliveUnits());
-
-      var damage = CastSpell(unit, target, spell);
-      // EXTENSION - have a % cast failed?
-      ApplySpell(target, spell, damage);
-
-      if (target.Health <= 0)
-      {
-         CombatLog.UnitDies(target);
-      }
-   }
-
-   public int? CastSpell(UnitState caster, UnitState target, Spell spell)
+   public int? CastSpell(UnitState caster, UnitState target, Spell spell, ICombatLog? log)
    {
       int? amount = null;
       if (spell.IsOverTime)
       {
-         CombatLog.CastSpell(caster, target, spell);
+         log?.CastSpell(caster, target, spell);
       }
       else
       {
          amount = spell.SpellEffect.RollRandomAmount();
-         CombatLog.CastSpell(caster, target, spell, amount);
+         log?.CastSpell(caster, target, spell, amount);
       }
 
       caster.ModifyState(builder => builder.MarkCooldown(spell.Kind));
       return amount;
    }
 
-   private void ApplySpell(UnitState target, Spell spell, int? amount)
+   public void ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
    {
       // TODO: apply defences etc
       if (spell.IsOverTime)
       {
-         ApplyOverTimeSpell(target, spell);
+         ApplyOverTimeSpell(target, spell, log);
       }
       else
       {
-         ApplyDirectHitSpell(target, spell, amount!.Value);
+         ApplyDirectHitSpell(target, spell, amount!.Value, log);
       }
    }
 
-   private void ApplyDirectHitSpell(UnitState target, Spell spell, int amount)
+   private void ApplyDirectHitSpell(UnitState target, Spell spell, int amount, ICombatLog? log)
    {
-      if (DetectCrit(spell))
+      if (DetectCrit(spell, log))
       {
          amount *= spell.SpellEffect.CritModifier;
-         ApplyCritEffect(target, spell);
+         ApplyCritEffect(target, spell, log);
       }
-      ApplyDirectHitOrHeal(target, spell, amount);
+      ApplyDirectHitOrHeal(target, spell, amount, log);
    }
 
-   private void ApplyCritEffect(UnitState target, Spell spell)
+   private void ApplyCritEffect(UnitState target, Spell spell, ICombatLog? log)
    {
       if (spell.CritEffect != null)
       {
          if (spell.CritEffect.Kind == SpellEffectKind.OverTime)
          {
-            AttachOverTime(target, spell.CritEffect);
+            AttachOverTime(target, spell.CritEffect, log);
          }
          else if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
          {
-            ApplyFreezeSpell(target, spell.CritEffect);
+            ApplyFreezeSpell(target, spell.CritEffect, log);
          }
       }
    }
 
-   private void ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount)
+   private void ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount, ICombatLog? log)
    {
       if (spell.SpellEffect.IsHarm)
       {
-         DamageUnit(target, amount);
+         DamageUnit(target, amount, log);
       }
       else
       {
-         HealUnit(target, amount);
+         HealUnit(target, amount, log);
       }
    }
 
-   private void ApplyOverTimeSpell(UnitState target, Spell spell)
+   private void ApplyOverTimeSpell(UnitState target, Spell spell, ICombatLog? log)
    {
-      AttachOverTime(target, spell.SpellEffect);
+      AttachOverTime(target, spell.SpellEffect, log);
    }
 
-   private void ApplyFreezeSpell(UnitState target, SpellEffect spell)
+   private void ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
    {
       target.ModifyState(builder => builder.Freeze(spell.Duration!.Value));
+      // todo: add log freeze
    }
 
-   private void AttachOverTime(UnitState target, SpellEffect effect)
+   private void AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
    {
       target.ModifyState(builder => builder.AttachOverTime(effect));
+      // todo: add log overtime
    }
 
-   private void DamageUnit(UnitState target, int amount)
+   private void DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
       target.ModifyState(builder => builder.Hit(amount));
-      CombatLog.TakeDamage(target, amount);
+      log?.TakeDamage(target, amount);
    }
 
-   private void HealUnit(UnitState target, int amount)
+   private void HealUnit(UnitState target, int amount, ICombatLog? log)
    {
       target.ModifyState(builder => builder.Heal(amount));
-      CombatLog.HealDamage(target, amount);
+      log?.HealDamage(target, amount);
    }
 
-   private bool DetectCrit(Spell spell)
+   private bool DetectCrit(Spell spell, ICombatLog? log)
    {
       if (Rng.Random.Next(0, 100) <= spell.SpellEffect.CritChance)
       {
-         CombatLog.Crit(spell);
+         log?.Crit(spell);
          return true;
       }
 

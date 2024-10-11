@@ -9,54 +9,71 @@ namespace CombatEngine;
 ///
 public static class CombatRunner
 {
+   public static void PerformTurn(Combat combat, UnitState unit, ICombatLog log)
+   {
+      log.Turn(unit);
 
-   public static IEnumerable<UnitState> Run(Combat combatInstance)
+      unit.UpdateTick();
+
+      var (target, spell) = unit.Unit.ChooseTargetAndSpell(combat.GetAliveUnits());
+
+      var damage = combat.CastSpell(unit, target, spell, log);
+      // EXTENSION - have a % cast failed?
+      combat.ApplySpell(target, spell, damage, log);
+
+      if (target.Health <= 0)
+      {
+         log.UnitDies(target);
+      }
+   }
+
+   public static IEnumerable<UnitState> Run(Combat combat, ICombatLog log, ICombatListener listener)
    {
       int round = 1;
 
       while (true)
       {
-         combatInstance.CombatLog.RoundBegins(round);
-         combatInstance.CombatLog.UpkeepBegins();
-         foreach (var aliveUnit in combatInstance.GetAliveUnits())
+         log.RoundBegins(round);
+         log.UpkeepBegins();
+         foreach (var aliveUnit in combat.GetAliveUnits())
          {
             aliveUnit.Upkeep();
          }
 
-         combatInstance.CombatLog.UpkeepEnds();
+         log.UpkeepEnds();
 
-         combatInstance.CombatLog.ReportSides(combatInstance.GetAliveUnits());
-         if (GetWin(combatInstance, round) != null)
+         log.ReportSides(combat.GetAliveUnits());
+         if (GetWin(combat, round, log) != null)
          {
-            return combatInstance.GetAliveUnits();
+            return combat.GetAliveUnits();
          }
 
-         var unit = combatInstance.TryGetNextUnit();
+         var unit = combat.TryGetNextUnit();
          while (unit != null)
          {
-            combatInstance.PerformTurn(unit);
-            unit = combatInstance.TryGetNextUnit();
+            PerformTurn(combat, unit, log);
+            unit = combat.TryGetNextUnit();
 
-            if (GetWin(combatInstance, round) != null)
+            if (GetWin(combat, round, log) != null)
             {
-               return combatInstance.GetAliveUnits();
+               return combat.GetAliveUnits();
             }
          }
 
-         combatInstance.CombatListener.EndOfRound(round);
-         combatInstance.ResetRound();
+         listener.EndOfRound(round);
+         combat.ResetRound();
          round++;
       }
    }
 
-   public static IEnumerable<UnitState>? GetWin(Combat combatInstance, int round)
+   public static IEnumerable<UnitState>? GetWin(Combat combatInstance, int round, ICombatLog log)
    {
       var winningSide = combatInstance.TryGetWinningSide();
       if (winningSide != null)
       {
-         combatInstance.CombatLog.TotalRounds(round);
-         combatInstance.CombatLog.Win(winningSide.Value);
-         combatInstance.CombatLog.Winners(combatInstance.GetAliveUnits());
+         log.TotalRounds(round);
+         log.Win(winningSide.Value);
+         log.Winners(combatInstance.GetAliveUnits());
          return combatInstance.GetAliveUnits();
       }
 

@@ -61,9 +61,9 @@ static IEnumerable<UnitState> RunGameInstance()
       Rng.ReplaceSeed(new Random().Next());
       var combatants = FightBuilder.CreateScenario2V2();
 
-      var combat = new Combat(new NullCombatListener(), new NullCombatLog(), combatants);
+      var combat = new Combat(combatants);
 
-      return CombatRunner.Run(combat);
+      return CombatRunner.Run(combat, new NullCombatLog(), new NullCombatListener());
    }
 }
 
