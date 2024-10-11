@@ -1,13 +1,32 @@
 ﻿namespace CombatEngine;
+
+/// <summary>
+/// stores enums for unit and spell details
+/// </summary>
+
 public enum UnitKind
 {
     Warrior,
     Mage
 }
 
-public enum Actions 
+public enum SpellKind
 {
-    Hit,
-    ApplyBuff,
-    Heal
+   // warrior spells
+   SwordHit,
+   ShieldBash,
+
+   // mage spells
+   FrostBolt,
+   FireSnap,
+
+   // universal spells
+   HealthPotion,
+   HealthDurationPotion
+}
+
+public enum Side
+{ 
+    Red,
+    Blue
 }
