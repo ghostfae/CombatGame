@@ -1,4 +1,6 @@
-﻿namespace CombatEngine;
+﻿using System.Drawing;
+
+namespace CombatEngine;
 /// <summary>
 /// state that updates whenever a unit casts or reacts to a spell;
 /// a mutable version of the unit
@@ -11,8 +13,9 @@ public class UnitState
    public bool CanAct { get; set; }
    public int CanActTimer { get; set; }
    public List<TimedOverTimeEffect> OverTimeEffects { get; set; }
-   public List<TimedSpell> TimedSpells { get; }
-
+   public List<TimedSpell> TimedSpells { get; set; }
+   public bool ResetRound() => CanAct = true;
+   public bool MarkAsTakenTurn() => CanAct = false;
    public static UnitState InitialCreate(Unit unit, Side side, int health)
    {
       return new UnitState(unit, side, health);
@@ -46,21 +49,39 @@ public class UnitState
    {
       return Health > 0;
    }
-
+   public void UpdateTick()
+   {
+      ModifyState(builder => builder.Tick());
+      MarkAsTakenTurn();
+   }
+   public void Upkeep()
+   {
+      ModifyState(builder => builder
+         .UpkeepOverTime()
+         .UpkeepCanAct());
+   }
    public override string ToString()
    {
       return
          $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Health)}: {Health}," +
          $" {nameof(Side)}: {Side}, {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
-}
 
-public static class UnitExtensions
-{
-   public static void ModifyState(this Unit unit, Action<UnitStateBuilder> modifyStateAction)
+   public void ModifyState(Action<UnitStateBuilder> modifyStateAction)
    {
-      var builder = new UnitStateBuilder(unit.State);
+      var builder = new UnitStateBuilder(this);
       modifyStateAction(builder);
-      unit.UpdateState(builder.Build());
+      Unit.UpdateState(builder.Build());
+      ModifySelf(Unit.State);
+   }
+
+   public void ModifySelf(UnitState newState)
+   {
+      Health = newState.Health;
+      TimedSpells = newState.TimedSpells;
+      Side = newState.Side;
+      OverTimeEffects = newState.OverTimeEffects;
+      CanAct = newState.CanAct;
+      CanActTimer = newState.CanActTimer;
    }
 }

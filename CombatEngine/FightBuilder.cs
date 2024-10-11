@@ -4,25 +4,25 @@
 /// </summary>
 public class FightBuilder
 {
-    public static Unit AddWarrior(Side side) 
+    public static UnitState AddWarrior(Side side) 
     {
         var warrior = ClassBuilder.CreateWarrior(side);
 
-        return warrior;
+        return warrior.State;
     }
 
-    public static Unit AddMage(Side side)
+    public static UnitState AddMage(Side side)
     {
         var mage = ClassBuilder.CreateMage(side);
         
-        return mage;
+        return mage.State;
     }
 
-    public static Unit[] CreateScenario1V1() 
+    public static UnitState[] CreateScenario1V1() 
     {
         return [AddWarrior(Side.Red), AddMage(Side.Blue)];
     }
-    public static Unit[] CreateScenario2V2()
+    public static UnitState[] CreateScenario2V2()
     {
        return [AddWarrior(Side.Red), AddWarrior(Side.Blue), AddMage(Side.Red), AddMage(Side.Blue)];
     }

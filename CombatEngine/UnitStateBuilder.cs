@@ -127,7 +127,6 @@ public class UnitStateBuilder
    {
       var state = new UnitState(_unit, _health, _timedSpells,
          _side, _overTimeEffects, _canAct, _canActTimer); 
-      //Console.WriteLine($"Built {state}");
       return state;
    }
 
