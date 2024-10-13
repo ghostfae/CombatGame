@@ -17,9 +17,12 @@ public static class CombatRunner
 
       var (target, spell) = unit.Unit.ChooseTargetAndSpell(combat.GetAliveUnits());
 
-      var damage = combat.CastSpell(unit, target, spell, log);
+      var (damage, newState) = combat.CastSpell(unit, target, spell, log);
+      // TODO: update cooldown with new state
+      unit.ModifySelf(newState);
       // EXTENSION - have a % cast failed?
-      combat.ApplySpell(target, spell, damage, log);
+
+      target.ModifySelf(combat.ApplySpell(target, spell, damage, log)); // todo: apply to target 
 
       if (target.Health <= 0)
       {

@@ -1,4 +1,5 @@
 ﻿using CombatEngine;
+using System.Collections.Generic;
 
 namespace CombatEngine
 {
@@ -7,7 +8,6 @@ namespace CombatEngine
       void RoundBegins(int round);
 
       void UpkeepBegins();
-
       void UpkeepEnds();
 
       void ReportSides(IEnumerable<UnitState> units);

@@ -67,12 +67,12 @@ public class UnitState
          $" {nameof(Side)}: {Side}, {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
 
-   public void ModifyState(Action<UnitStateBuilder> modifyStateAction)
+   public UnitState ModifyState(Action<UnitStateBuilder> modifyStateAction)
    {
       var builder = new UnitStateBuilder(this);
       modifyStateAction(builder);
       Unit.UpdateState(builder.Build());
-      ModifySelf(Unit.State);
+      return Unit.State;
    }
 
    public void ModifySelf(UnitState newState)

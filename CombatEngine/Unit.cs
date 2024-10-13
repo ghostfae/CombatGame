@@ -5,6 +5,7 @@
 
 public class Unit
 {
+   public int Uid { get; }
    public UnitKind Kind { get; }
    public int InitialHealth { get; }
    public int Speed { get; }
@@ -13,8 +14,9 @@ public class Unit
 
    public string Name { get; }
 
-   private Unit(UnitKind kind, int initialHealth, int speed, Side side, string name, List<Spell> allSpells)
+   private Unit(int uid, UnitKind kind, int initialHealth, int speed, Side side, string name, List<Spell> allSpells)
    {
+      Uid = uid;
       Kind = kind;
       InitialHealth = initialHealth;
       Speed = speed;
@@ -23,8 +25,8 @@ public class Unit
       State = UnitState.InitialCreate(this, side, initialHealth);
    }
 
-   public Unit(UnitKind kind, int initialHealth, int speed, Side side, string name, params Spell[] allSpells)
-      : this(kind, initialHealth, speed, side, name, allSpells.ToList())
+   public Unit(int uid, UnitKind kind, int initialHealth, int speed, Side side, string name, params Spell[] allSpells)
+      : this( uid, kind, initialHealth, speed, side, name, allSpells.ToList())
    {
    }
 
@@ -36,10 +38,16 @@ public class Unit
    public (UnitState target, Spell spell) ChooseTargetAndSpell(IEnumerable<UnitState> availableTargets)
    {
       var selectedSpell = UnitBehaviour.SelectSpell(State);
+      var allTargets = new List<UnitState>();
+
+      foreach (var state in availableTargets)
+      {
+         allTargets.Add(state);
+      }
 
       var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
-         UnitBehaviour.SelectEnemy(availableTargets, State) 
-         : UnitBehaviour.SelectAlly(availableTargets, State);
+         UnitBehaviour.SelectEnemy(allTargets, State) 
+         : UnitBehaviour.SelectAlly(allTargets, State);
 
       return (selectedTarget, selectedSpell);
    }

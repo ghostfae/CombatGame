@@ -6,10 +6,10 @@ internal class CombatConsole
 {
    static void Main(string[] args)
    {
-      Dictionary<>
       //Rng.ReplaceSeed(new Random().Next());
+      var classBuilder = new ClassBuilder();
 
-      var combatants = FightBuilder.CreateScenario1V1();
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
       var combat = new Combat(combatants);
       CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
    }

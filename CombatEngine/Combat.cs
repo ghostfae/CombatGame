@@ -2,21 +2,13 @@
 
 public class Combat
 {
-   //public readonly ICombatLog CombatLog;
-   //public readonly ICombatListener CombatListener;
-   private readonly List<UnitState> _units;
-
-   public Combat( params UnitState[] combatants)
+   private readonly Dictionary<int, UnitState> _combatants;
+   public Combat(IEnumerable<UnitState> combatants)
    {
-      //CombatListener = combatListener;
-      //CombatLog = log;
-      _units = combatants.ToList();
+      _combatants = combatants.ToDictionary(u => u.Unit.Uid, u => u);
    }
 
-   /// <returns>true if the combat should continue, false if one side wins</returns>
-   
-
-   public int? CastSpell(UnitState caster, UnitState target, Spell spell, ICombatLog? log)
+   public (int? damageAmount, UnitState newState) CastSpell(UnitState caster, UnitState target, Spell spell, ICombatLog? log)
    {
       int? amount = null;
       if (spell.IsOverTime)
@@ -29,87 +21,89 @@ public class Combat
          log?.CastSpell(caster, target, spell, amount);
       }
 
-      caster.ModifyState(builder => builder.MarkCooldown(spell.Kind));
-      return amount;
+      
+      return (amount, caster.ModifyState(builder => builder.MarkCooldown(spell.Kind))) ;
    }
 
-   public void ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
+   public UnitState ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
    {
       // TODO: apply defences etc
       if (spell.IsOverTime)
       {
-         ApplyOverTimeSpell(target, spell, log);
+         return ApplyOverTimeSpell(target, spell, log);
       }
       else
       {
-         ApplyDirectHitSpell(target, spell, amount!.Value, log);
+         return ApplyDirectHitSpell(target, spell, amount!.Value, log);
       }
    }
 
-   private void ApplyDirectHitSpell(UnitState target, Spell spell, int amount, ICombatLog? log)
+   private UnitState ApplyDirectHitSpell(UnitState target, Spell spell, int amount, ICombatLog? log)
    {
       if (DetectCrit(spell, log))
       {
          amount *= spell.SpellEffect.CritModifier;
-         ApplyCritEffect(target, spell, log);
+         ApplyCritEffect(target, spell, log); // TODO: how to add this?
       }
-      ApplyDirectHitOrHeal(target, spell, amount, log);
+      return ApplyDirectHitOrHeal(target, spell, amount, log);
    }
 
-   private void ApplyCritEffect(UnitState target, Spell spell, ICombatLog? log)
+   private UnitState ApplyCritEffect(UnitState target, Spell spell, ICombatLog? log)
    {
       if (spell.CritEffect != null)
       {
          if (spell.CritEffect.Kind == SpellEffectKind.OverTime)
          {
-            AttachOverTime(target, spell.CritEffect, log);
+            return AttachOverTime(target, spell.CritEffect, log);
          }
-         else if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
+         if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
          {
-            ApplyFreezeSpell(target, spell.CritEffect, log);
+            return ApplyFreezeSpell(target, spell.CritEffect, log);
          }
       }
+
+      return target;
    }
 
-   private void ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount, ICombatLog? log)
+   private UnitState ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount, ICombatLog? log)
    {
       if (spell.SpellEffect.IsHarm)
       {
-         DamageUnit(target, amount, log);
+         return DamageUnit(target, amount, log);
       }
       else
       {
-         HealUnit(target, amount, log);
+         return HealUnit(target, amount, log);
       }
    }
 
-   private void ApplyOverTimeSpell(UnitState target, Spell spell, ICombatLog? log)
+   private UnitState ApplyOverTimeSpell(UnitState target, Spell spell, ICombatLog? log)
    {
-      AttachOverTime(target, spell.SpellEffect, log);
+      return AttachOverTime(target, spell.SpellEffect, log);
    }
 
-   private void ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
+   private UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
    {
-      target.ModifyState(builder => builder.Freeze(spell.Duration!.Value));
+      return target.ModifyState(builder => builder.Freeze(spell.Duration!.Value));
       // todo: add log freeze
    }
 
-   private void AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
+   private UnitState AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
    {
-      target.ModifyState(builder => builder.AttachOverTime(effect));
+      return target.ModifyState(builder => builder.AttachOverTime(effect));
       // todo: add log overtime
    }
 
-   private void DamageUnit(UnitState target, int amount, ICombatLog? log)
+   private UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
-      target.ModifyState(builder => builder.Hit(amount));
       log?.TakeDamage(target, amount);
+      return target.ModifyState(builder => builder.Hit(amount));
    }
 
-   private void HealUnit(UnitState target, int amount, ICombatLog? log)
+   private UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
    {
-      target.ModifyState(builder => builder.Heal(amount));
       log?.HealDamage(target, amount);
+      return target.ModifyState(builder => builder.Heal(amount));
    }
 
    private bool DetectCrit(Spell spell, ICombatLog? log)
@@ -125,32 +119,36 @@ public class Combat
 
    public void ResetRound()
    {
-      foreach (var unit in _units)
+      foreach (var unit in _combatants)
       {
-         if (unit.CanAct || unit.CanActTimer == 0)
+         if (unit.Value.CanAct || unit.Value.CanActTimer == 0)
          {
-            unit.ResetRound();
+            unit.Value.ResetRound();
          }
       }
    }
 
    public IEnumerable<UnitState> GetAliveUnits()
    {
-      return _units.Where(unit => unit.Health > 0);
+      return _combatants
+         .Values
+         .Where(unit => unit.Health > 0);
    }
 
    public UnitState? TryGetNextUnit()
    {
-      return _units
-         .Where(unit => unit is { CanAct: true, Health: > 0 })
-         .MaxBy(unit => unit.Unit.Speed);
+      return _combatants
+         .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
+         .OrderBy(unit => unit.Value.Unit.Speed)
+         .Select(kvp => kvp.Value)
+         .FirstOrDefault();
    }
 
    public Side? TryGetWinningSide()
    {
-      var survivingSides = _units
-         .Where(u => u.Health > 0)
-         .GroupBy(u => u.Side)
+      var survivingSides = _combatants
+         .Where(u => u.Value.Health > 0)
+         .GroupBy(u => u.Value.Side)
          .Select(g => g.Key)
          .ToArray();
 

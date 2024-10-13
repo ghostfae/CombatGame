@@ -72,7 +72,7 @@ public class ConsoleCombatLog : ICombatLog
    {
       if (amount.HasValue)
       {
-         Console.WriteLine($"{unit.Unit} was hit for {amount} damage and has {unit.Health} health remaining.");
+         Console.WriteLine($"{unit.Unit} was hit for {amount} damage and has {unit.Health - amount} health remaining.");
       }
    }
 
@@ -80,7 +80,7 @@ public class ConsoleCombatLog : ICombatLog
    {
       if (amount.HasValue)
       {
-         Console.WriteLine($"{unit.Unit} was healed for {amount} and has {unit.Health} health remaining.");
+         Console.WriteLine($"{unit.Unit} was healed for {amount} and has {unit.Health + amount} health remaining.");
       }
    }
 
