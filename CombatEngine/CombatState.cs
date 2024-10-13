@@ -1,11 +1,38 @@
 ﻿namespace CombatEngine;
 
-public class Combat
+public class CombatState
 {
    private readonly Dictionary<int, UnitState> _combatants;
-   public Combat(IEnumerable<UnitState> combatants)
+
+   public CombatState(IEnumerable<UnitState> combatants)
    {
       _combatants = combatants.ToDictionary(u => u.Unit.Uid, u => u);
+   }
+
+   private CombatState(Dictionary<int, UnitState> combatants)
+   {
+      _combatants = combatants;
+   }
+
+   public CombatState CastAndApplySpell(UnitState caster, UnitState target, Spell spell, ICombatLog log)
+   {
+      var (damage, updatedCaster) = CastSpell(caster, target, spell, log);
+
+      // EXTENSION - have a % cast failed?
+
+      var updatedTarget = ApplySpell(target, spell, damage, log);
+
+      return CloneWith(updatedCaster, updatedTarget);
+   }
+
+   private CombatState CloneWith(UnitState updatedCaster, UnitState updatedTarget)
+   {
+      var clone = new Dictionary<int, UnitState>(_combatants)
+      {
+         [updatedCaster.Unit.Uid] = updatedCaster,
+         [updatedTarget.Unit.Uid] = updatedTarget
+      };
+      return new CombatState(clone);
    }
 
    public (int? damageAmount, UnitState newState) CastSpell(UnitState caster, UnitState target, Spell spell, ICombatLog? log)
@@ -43,7 +70,7 @@ public class Combat
       if (DetectCrit(spell, log))
       {
          amount *= spell.SpellEffect.CritModifier;
-         ApplyCritEffect(target, spell, log); // TODO: how to add this?
+         target = ApplyCritEffect(target, spell, log); // TODO: how to add this?
       }
       return ApplyDirectHitOrHeal(target, spell, amount, log);
    }

@@ -10,7 +10,7 @@ internal class CombatConsole
       var classBuilder = new ClassBuilder();
 
       var combatants = FightBuilder.CreateScenario1V1(classBuilder);
-      var combat = new Combat(combatants);
+      var combat = new CombatState(combatants);
       CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
    }
 }
