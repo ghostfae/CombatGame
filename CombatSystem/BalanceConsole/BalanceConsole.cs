@@ -46,7 +46,7 @@ internal class BalanceConsole
          }
       }
 
-      Console.WriteLine($"Red win {redWin} and Blue win {blueWin}");
+      Console.WriteLine($"Red win {redWin} times and Blue win {blueWin} times.");
       Console.WriteLine($"Mages have won {mageWins} times.");
       Console.WriteLine($"Warriors have won {warriorWins} times.");
       if (bothWin > 0)
@@ -58,8 +58,8 @@ internal class BalanceConsole
 
 static IEnumerable<UnitState> RunGameInstance()
    {
-      Rng.ReplaceSeed(new Random().Next());
-      var combatants = FightBuilder.CreateScenario2V2();
+      //Rng.ReplaceSeed(new Random().Next());
+      var combatants = FightBuilder.CreateScenario2V2(new ClassBuilder());
 
       var combat = new CombatState(combatants);
 
@@ -112,8 +112,6 @@ internal class NullCombatLog : ICombatLog
    {
    }
 
-   
-
    public void Win(Side winningSide)
    {
    }
@@ -129,9 +127,10 @@ internal class NullCombatLog : ICombatLog
       string winners = "";
       foreach (var unit in units)
       {
-         winners += unit.ToString();
+         winners += unit.Unit.ToString();
       }
       Console.WriteLine($"{text} {winners}");
+      Console.WriteLine($"{units.First().Side}");
       Console.WriteLine();
    }
 
@@ -139,8 +138,6 @@ internal class NullCombatLog : ICombatLog
    {
       Console.WriteLine($"In a total of {totalRounds} rounds...");
    }
-
-
 
    public void Crit(Spell spell)
    {
