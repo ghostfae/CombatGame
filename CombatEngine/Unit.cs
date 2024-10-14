@@ -37,7 +37,7 @@ public class Unit
 
    public (UnitState target, Spell spell) ChooseTargetAndSpell(IEnumerable<UnitState> availableTargets)
    {
-      var selectedSpell = UnitBehaviour.SelectSpell(State);
+      var selectedSpell = UnitBehaviour.SelectRandomSpell(State);
       var allTargets = new List<UnitState>();
 
       foreach (var state in availableTargets)
@@ -46,8 +46,8 @@ public class Unit
       }
 
       var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
-         UnitBehaviour.SelectEnemy(allTargets, State) 
-         : UnitBehaviour.SelectAlly(allTargets, State);
+         UnitBehaviour.SelectRandomEnemy(allTargets, State) 
+         : UnitBehaviour.SelectRandomAlly(allTargets, State);
 
       return (selectedTarget, selectedSpell);
    }

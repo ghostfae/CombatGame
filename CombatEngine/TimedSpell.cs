@@ -25,13 +25,13 @@ public class TimedSpell
         return new TimedSpell(Spell, CooldownTimer);
     }
 
-    public void Tick(int ticks = 1)
+    public TimedSpell Tick(int ticks = 1)
     {
-        CooldownTimer = Math.Max(CooldownTimer - ticks, 0); // used instead of if; always subtracts
+       return new TimedSpell(Spell, Math.Max(CooldownTimer - ticks, 0)); // used instead of if; always subtracts
     }
 
-    public void MarkCooldown() 
+    public TimedSpell MarkCooldown() 
     {
-        CooldownTimer = Spell.MaxCooldown;
+       return new TimedSpell(Spell, Spell.MaxCooldown);
     }
 }

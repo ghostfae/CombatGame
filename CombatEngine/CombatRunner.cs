@@ -14,17 +14,18 @@ public static class CombatRunner
       log.Turn(caster);
 
       caster = caster.UpdateTick();
+      combatState = combatState.CloneWith(caster);
 
       var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());
 
-      var updatedCombatState = combatState.CastAndApplySpell(caster, target, spell, log);
+      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
 
       if (target.Health <= 0)
       {
          log.UnitDies(target);
       }
 
-      return updatedCombatState;
+      return combatState;
    }
 
    public static IEnumerable<UnitState> Run(CombatState combatState, ICombatLog log, ICombatListener listener)

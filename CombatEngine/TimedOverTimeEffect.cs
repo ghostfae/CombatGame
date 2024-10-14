@@ -24,8 +24,8 @@ public class TimedOverTimeEffect
       return new TimedOverTimeEffect(Effect, Timer);
    }
 
-   public void Tick(int ticks = 1)
+   public TimedOverTimeEffect Tick(int ticks = 1)
    {
-      Timer = Math.Max(Timer - ticks, 0); // used instead of if; always subtracts
+      return new TimedOverTimeEffect(Effect, Math.Max(Timer - ticks, 0)); // used instead of if; always subtracts
    }
 }

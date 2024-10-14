@@ -14,6 +14,12 @@ public class CombatState
       _combatants = combatants;
    }
 
+   public CombatState ExhaustTurn(UnitState combatant)
+   {
+      combatant = combatant.UpdateTick();
+      return CloneWith(combatant);
+   }
+
    public CombatState Upkeep(ICombatLog log)
    {
       // todo: log upkeep
@@ -43,7 +49,7 @@ public class CombatState
       return new CombatState(clone);
    }
 
-   private CombatState CloneWith(params UnitState[] updatedUnits)
+   public CombatState CloneWith(params UnitState[] updatedUnits)
    {
       return CloneWith((IEnumerable<UnitState>)updatedUnits);
    }
@@ -62,7 +68,7 @@ public class CombatState
       }
 
       
-      return (amount, caster.ModifyState(builder => builder.MarkCooldown(spell.Kind))) ;
+      return (amount, caster.MarkCooldown(spell.Kind));
    }
 
    public UnitState ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
@@ -124,26 +130,28 @@ public class CombatState
 
    private UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
    {
-      return target.ModifyState(builder => builder.Freeze(spell.Duration!.Value));
+      return target.Freeze(spell.Duration!.Value);
       // todo: add log freeze
    }
 
    private UnitState AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
    {
-      return target.ModifyState(builder => builder.AttachOverTime(effect));
+      return target.AttachOverTime(effect);
       // todo: add log overtime
    }
 
    private UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
+      target = target.Hit(amount);
       log?.TakeDamage(target, amount);
-      return target.ModifyState(builder => builder.Hit(amount));
+      return target;
    }
 
    private UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
    {
+      target = target.Heal(amount);
       log?.HealDamage(target, amount);
-      return target.ModifyState(builder => builder.Heal(amount));
+      return target;
    }
 
    private bool DetectCrit(Spell spell, ICombatLog? log)
@@ -179,7 +187,7 @@ public class CombatState
    {
       return _combatants
          .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
-         .OrderBy(unit => unit.Value.Unit.Speed)
+         .OrderByDescending(unit => unit.Value.Unit.Speed)
          .Select(kvp => kvp.Value)
          .FirstOrDefault();
    }
