@@ -14,6 +14,13 @@ public class CombatState
       _combatants = combatants;
    }
 
+   public CombatState Upkeep(ICombatLog log)
+   {
+      // todo: log upkeep
+      var updatedUnits = GetAliveUnits().Select(aliveUnit => aliveUnit.Upkeep());
+      return CloneWith(updatedUnits);
+   }
+
    public CombatState CastAndApplySpell(UnitState caster, UnitState target, Spell spell, ICombatLog log)
    {
       var (damage, updatedCaster) = CastSpell(caster, target, spell, log);
@@ -25,14 +32,20 @@ public class CombatState
       return CloneWith(updatedCaster, updatedTarget);
    }
 
-   private CombatState CloneWith(UnitState updatedCaster, UnitState updatedTarget)
+   private CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
    {
-      var clone = new Dictionary<int, UnitState>(_combatants)
+      var clone = new Dictionary<int, UnitState>(_combatants);
+      foreach (var unit in updatedUnits)
       {
-         [updatedCaster.Unit.Uid] = updatedCaster,
-         [updatedTarget.Unit.Uid] = updatedTarget
-      };
+         clone[unit.Unit.Uid] = unit;
+      }
+
       return new CombatState(clone);
+   }
+
+   private CombatState CloneWith(params UnitState[] updatedUnits)
+   {
+      return CloneWith((IEnumerable<UnitState>)updatedUnits);
    }
 
    public (int? damageAmount, UnitState newState) CastSpell(UnitState caster, UnitState target, Spell spell, ICombatLog? log)

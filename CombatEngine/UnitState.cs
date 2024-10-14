@@ -49,14 +49,14 @@ public class UnitState
    {
       return Health > 0;
    }
-   public void UpdateTick()
+   public UnitState UpdateTick()
    {
-      ModifyState(builder => builder.Tick());
       MarkAsTakenTurn();
+      return ModifyState(builder => builder.Tick());
    }
-   public void Upkeep()
+   public UnitState Upkeep()
    {
-      ModifyState(builder => builder
+      return ModifyState(builder => builder
          .UpkeepOverTime()
          .UpkeepCanAct());
    }

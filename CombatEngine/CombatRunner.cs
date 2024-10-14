@@ -13,7 +13,7 @@ public static class CombatRunner
    {
       log.Turn(caster);
 
-      caster.UpdateTick();
+      caster = caster.UpdateTick();
 
       var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());
 
@@ -34,12 +34,9 @@ public static class CombatRunner
       while (true)
       {
          log.RoundBegins(round);
-         log.UpkeepBegins();
-         foreach (var aliveUnit in combatState.GetAliveUnits())
-         {
-            aliveUnit.Upkeep();
-         }
 
+         log.UpkeepBegins();
+         combatState = combatState.Upkeep(log);
          log.UpkeepEnds();
 
          log.ReportSides(combatState.GetAliveUnits());
