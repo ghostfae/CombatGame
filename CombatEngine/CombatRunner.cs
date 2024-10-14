@@ -13,7 +13,7 @@ public static class CombatRunner
    {
       log.Turn(caster);
 
-      caster = caster.UpdateTick();
+      caster = caster.Tick().ExhaustTurn();
       combatState = combatState.CloneWith(caster);
 
       var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());

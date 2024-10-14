@@ -14,12 +14,6 @@ public class CombatState
       _combatants = combatants;
    }
 
-   public CombatState ExhaustTurn(UnitState combatant)
-   {
-      combatant = combatant.UpdateTick();
-      return CloneWith(combatant);
-   }
-
    public CombatState Upkeep(ICombatLog log)
    {
       // todo: log upkeep

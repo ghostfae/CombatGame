@@ -8,8 +8,8 @@ namespace CombatEngine;
 public class UnitState
 {
    public Unit Unit { get; }
-   public int Health { get; private set; }
-   public Side Side { get; set; }
+   public Side Side { get; set; } // unused now, but will allow "possession" spells etc
+   public int Health { get; set; }
    public bool CanAct { get; set; }
    public int CanActTimer { get; set; }
    public List<TimedOverTimeEffect> OverTimeEffects { get; set; }
@@ -18,6 +18,21 @@ public class UnitState
    public static UnitState InitialCreate(Unit unit, Side side, int health)
    {
       return new UnitState(unit, side, health);
+   }
+
+   private UnitState(Unit unit, Side side, int health,
+      List<TimedSpell> timedSpells,
+      List<TimedOverTimeEffect> overTimeEffects, 
+      bool canAct, 
+      int canActTimer)
+   {
+      Unit = unit;
+      Side = side;
+      Health = health;
+      TimedSpells = timedSpells;
+      OverTimeEffects = overTimeEffects;
+      CanAct = canAct;
+      CanActTimer = canActTimer;
    }
 
    private UnitState(Unit unit, Side side, int health)
@@ -31,17 +46,9 @@ public class UnitState
       OverTimeEffects = [];
    }
 
-   // only used by the builder
-   internal UnitState(Unit unit, int health, List<TimedSpell> timedSpells,
-      Side side, List<TimedOverTimeEffect> overTimeEffects, bool canAct, int canActTimer)
+   private UnitState CloneWithHealth(int health)
    {
-      Unit = unit;
-      Health = health;
-      TimedSpells = timedSpells;
-      Side = side;
-      OverTimeEffects = overTimeEffects;
-      CanAct = canAct;
-      CanActTimer = canActTimer;
+      return new UnitState(Unit, Side, health, TimedSpells, OverTimeEffects, CanAct, CanActTimer);
    }
 
    public bool IsAlive()
@@ -52,41 +59,49 @@ public class UnitState
    /// <summary>
    /// Updates cooldowns of the timed spells and ticks over time effects.
    /// </summary>
-   public UnitState UpdateTick(int tick = 1)
+   public UnitState Tick(int tick = 1)
    {
       return new UnitState(
-         Unit, 
+         Unit,
+         Side,
          Health,
          TimedSpells.Select(ote => ote.Tick()).ToList(),
-         Side,
          OverTimeEffects.Select(ote => ote.Tick()).ToList(), 
-         false, 
+         CanAct, 
+         CanActTimer);
+   }
+
+   /// <summary>
+   /// Mark unit as made its turn
+   /// </summary>
+   /// <returns></returns>
+   public UnitState ExhaustTurn()
+   {
+      return new UnitState(
+         Unit,
+         Side,
+         Health,
+         TimedSpells,
+         OverTimeEffects,
+         false,
          CanActTimer);
    }
 
    public UnitState Upkeep()
    {
-      var updatedState = UpkeepOverTime();
-      var (canActTimer, canAct) = UpkeepCanAct();
-
-      updatedState.CanActTimer = canActTimer;
-      updatedState.CanAct = canAct;
-
-      return updatedState;
+      return UpkeepOverTime().UpkeepCanAct();
    }
 
    public UnitState Hit(int effect)
    {
       var health = Math.Max(0, Health - effect);
-      return new UnitState(Unit, health, TimedSpells,
-         Side, OverTimeEffects, CanAct, CanActTimer);
+      return CloneWithHealth(health);
    }
 
    public UnitState Heal(int effect)
    {
       var health = Math.Min(Unit.InitialHealth, Health + effect);
-      return new UnitState(Unit, health, TimedSpells,
-         Side, OverTimeEffects, CanAct, CanActTimer);
+      return CloneWithHealth(health);
    }
 
    public UnitState MarkCooldown(SpellKind spellKind)
@@ -99,19 +114,21 @@ public class UnitState
 
       clonedTimedSpells.Add(matchingSpell.MarkCooldown());
 
-      return new UnitState(Unit, Health, clonedTimedSpells,
-         Side, OverTimeEffects, CanAct, CanActTimer);
+      return new UnitState(Unit, Side, Health, clonedTimedSpells,
+         OverTimeEffects, CanAct, CanActTimer);
    }
 
    public UnitState AttachOverTime(SpellEffect spellEffect)
    {
-      var clone = new List<TimedOverTimeEffect>(OverTimeEffects)
-         { new(spellEffect) };
-
-      return new UnitState(Unit, Health, TimedSpells,
-         Side, clone, CanAct, CanActTimer);
+      return new UnitState(Unit, Side, Health, TimedSpells,
+         new List<TimedOverTimeEffect>(OverTimeEffects)
+            { new(spellEffect) }, 
+         CanAct, CanActTimer);
    }
 
+   /// <summary>
+   /// Applies over time effect and removes expired effect
+   /// </summary>
    public UnitState UpkeepOverTime()
    {
       if (!OverTimeEffects.Any())
@@ -119,8 +136,8 @@ public class UnitState
 
       var elementsToRemove = new List<TimedOverTimeEffect>();
 
-      var updatedState = new UnitState(Unit, Health, TimedSpells,
-         Side, OverTimeEffects, CanAct, CanActTimer);
+      var updatedState = new UnitState(Unit, Side, Health, TimedSpells,
+         OverTimeEffects, CanAct, CanActTimer);
 
       foreach (var item in OverTimeEffects)
       {
@@ -130,6 +147,7 @@ public class UnitState
          }
          else
          {
+            // TODO: log?
             var amount = item.Effect.RollRandomAmount();
             if (item.Effect.IsHarm)
             {
@@ -142,45 +160,34 @@ public class UnitState
          }
       }
 
-      foreach (var item in elementsToRemove)
-      {
-         updatedState.OverTimeEffects.Remove(item);
-      }
+      var overTimeEffects
+         = updatedState.OverTimeEffects.Except(elementsToRemove);
 
       return updatedState;
    }
 
-   public (int, bool) UpkeepCanAct()
+   /// <summary>
+   /// 
+   /// </summary>
+   public UnitState UpkeepCanAct()
    {
-      var canActTimer = CanActTimer;
-      bool canAct;
-
-      if (canActTimer > 0)
-      {
-         canActTimer--;
-         canAct = false;
-      }
-      else
-      {
-         canAct = true;
-      }
-
-      return (canActTimer, canAct);
+      return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, 
+         CanActTimer == 0,
+         Math.Max(0, CanActTimer - 1));
    }
 
    public UnitState Freeze(int duration)
    {
       CanAct = false;
       CanActTimer = duration;
-      return new UnitState(Unit, Health, TimedSpells,
-         Side, OverTimeEffects, CanAct, CanActTimer);
+      return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, CanAct, CanActTimer);
    }
 
    public override string ToString()
    {
       return
-         $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Health)}: {Health}," +
-         $" {nameof(Side)}: {Side}, {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
+         $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Side)}: {Side}, {nameof(Health)}: {Health}," +
+         $"  {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
 
 }
