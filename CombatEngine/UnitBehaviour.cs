@@ -26,4 +26,6 @@ public static class UnitBehaviour
       var allies = availableTargets.Where(t => t.Side == self.Side).ToArray();
       return allies[new Random(1).Next(allies.Length)];
    }
+
+
 }

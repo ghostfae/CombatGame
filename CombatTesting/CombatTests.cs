@@ -10,10 +10,24 @@ public class Tests
    }
 
    [Test]
-   public void TestDamageWorks()
+   public void TestFight()
    {
-      var combatants = FightBuilder.CreateScenario1V1();
-      //var combat = new CombatState(combatants[0], combatants[1]);
-      Assert.Pass();
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
+   }
+
+   [Test]
+   public void TestAttempt()
+   {
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      var list = CombatRunner.SimulateCombat(combat, combatants.First());
+      var bestCombo = list.MaxBy(v => v.diff);
+      Console.WriteLine(bestCombo);
    }
 }
