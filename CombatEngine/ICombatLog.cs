@@ -1,4 +1,5 @@
 ﻿using CombatEngine;
+using System.Collections.Generic;
 
 namespace CombatEngine
 {
@@ -7,24 +8,23 @@ namespace CombatEngine
       void RoundBegins(int round);
 
       void UpkeepBegins();
-
       void UpkeepEnds();
 
-      void ReportSides(IEnumerable<Unit> units);
+      void ReportSides(IEnumerable<UnitState> units);
 
-      void Turn(Unit unit);
+      void Turn(UnitState unit);
 
-      void CastSpell(Unit unit, Unit target, Spell currentSpell, int? amount = null);
+      void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null);
 
-      void TakeDamage(Unit unit, int? amount);
+      void TakeDamage(UnitState unit, int? amount);
 
-      void HealDamage(Unit unit, int? amount);
+      void HealDamage(UnitState unit, int? amount);
 
-      void UnitDies(Unit unit);
+      void UnitDies(UnitState unit);
 
       void Win(Side winningSide);
 
-      void Winners(IEnumerable<Unit> winningUnits);
+      void Winners(IEnumerable<UnitState> winningUnits);
 
       void TotalRounds(int totalRounds);
 

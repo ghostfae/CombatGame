@@ -2,47 +2,31 @@
 /// <summary>
 /// creates the combat unit and the initial state it has before the game starts
 /// </summary>
-public class RoundState
-{
-   public bool CanAct { get; set; } = true;
-}
 
 public class Unit
 {
+   public int Uid { get; }
    public UnitKind Kind { get; }
    public int InitialHealth { get; }
    public int Speed { get; }
    public IReadOnlyCollection<Spell> AllSpells { get; }
    public UnitState State { get; private set; }
 
-   public RoundState RoundState { get; private set; }
-
-   public Side Side => State.Side;
-   public int CurrentHealth => State.Health;
-   //public bool IsAlive() => State.IsAlive();
-
-   public bool CanAct() => RoundState.CanAct;
-
-   public bool ResetRound() => RoundState.CanAct = true;
-
-   public bool MarkAsTakenTurn() => RoundState.CanAct = false;
-
    public string Name { get; }
-   public IReadOnlyCollection<TimedSpell> TimedSpells => State.TimedSpells;
 
-   private Unit(UnitKind kind, int initialHealth, int speed, Side side, string name, List<Spell> allSpells)
+   private Unit(int uid, UnitKind kind, int initialHealth, int speed, Side side, string name, List<Spell> allSpells)
    {
+      Uid = uid;
       Kind = kind;
       InitialHealth = initialHealth;
       Speed = speed;
       AllSpells = allSpells;
       Name = name;
       State = UnitState.InitialCreate(this, side, initialHealth);
-      RoundState = new RoundState();
    }
 
-   public Unit(UnitKind kind, int initialHealth, int speed, Side side, string name, params Spell[] allSpells)
-      : this(kind, initialHealth, speed, side, name, allSpells.ToList())
+   public Unit(int uid, UnitKind kind, int initialHealth, int speed, Side side, string name, params Spell[] allSpells)
+      : this( uid, kind, initialHealth, speed, side, name, allSpells.ToList())
    {
    }
 
@@ -51,26 +35,19 @@ public class Unit
       State = state;
    }
 
-   public void Upkeep()
+   public (UnitState target, Spell spell) ChooseTargetAndSpell(IEnumerable<UnitState> availableTargets)
    {
-      this.ModifyState(builder => builder
-         .UpkeepOverTime()
-         .UpkeepCanAct());
-   }
+      var selectedSpell = UnitBehaviour.SelectRandomSpell(State);
+      var allTargets = new List<UnitState>();
 
-   public void UpdateTick()
-   {
-      this.ModifyState(builder => builder.Tick());
-      MarkAsTakenTurn();
-   }
-
-   public (Unit target, Spell spell) ChooseTargetAndSpell(IEnumerable<Unit> availableTargets)
-   {
-      var selectedSpell = UnitBehaviour.SelectSpell(this);
+      foreach (var state in availableTargets)
+      {
+         allTargets.Add(state);
+      }
 
       var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
-         UnitBehaviour.SelectEnemy(availableTargets, this) 
-         : UnitBehaviour.SelectAlly(availableTargets, this);
+         UnitBehaviour.SelectRandomEnemy(allTargets, State) 
+         : UnitBehaviour.SelectRandomAlly(allTargets, State);
 
       return (selectedTarget, selectedSpell);
    }

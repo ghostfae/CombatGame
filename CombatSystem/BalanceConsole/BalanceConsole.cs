@@ -22,7 +22,7 @@ internal class BalanceConsole
 
          if (enumerable.Count() == 1)
          {
-            if (enumerable.First().Kind == UnitKind.Mage)
+            if (enumerable.First().Unit.Kind == UnitKind.Mage)
             {
                mageWins++;
             }
@@ -36,7 +36,7 @@ internal class BalanceConsole
             bothWin++;
          }
 
-         if (enumerable.First().State.Side == Side.Blue)
+         if (enumerable.First().Side == Side.Blue)
          {
             blueWin++;
          }
@@ -46,7 +46,7 @@ internal class BalanceConsole
          }
       }
 
-      Console.WriteLine($"Red win {redWin} and Blue win {blueWin}");
+      Console.WriteLine($"Red win {redWin} times and Blue win {blueWin} times.");
       Console.WriteLine($"Mages have won {mageWins} times.");
       Console.WriteLine($"Warriors have won {warriorWins} times.");
       if (bothWin > 0)
@@ -56,14 +56,14 @@ internal class BalanceConsole
    }
 
 
-static IEnumerable<Unit> RunGameInstance()
+static IEnumerable<UnitState> RunGameInstance()
    {
-      Rng.ReplaceSeed(new Random().Next());
-      var combatants = FightBuilder.CreateScenario2V2();
+      //Rng.ReplaceSeed(new Random().Next());
+      var combatants = FightBuilder.CreateScenario2V2(new ClassBuilder());
 
-      var combat = new Combat(new NullCombatListener(), new NullCombatLog(), combatants);
+      var combat = new CombatState(combatants);
 
-      return combat.Run();
+      return CombatRunner.Run(combat, new NullCombatLog(), new NullCombatListener());
    }
 }
 
@@ -88,23 +88,27 @@ internal class NullCombatLog : ICombatLog
    {
    }
 
-   public void ReportSides(IEnumerable<Unit> units)
+   public void ReportSides(IEnumerable<UnitState> units)
    {
    }
 
-   public void Turn(Unit unit)
+   public void Turn(UnitState unit)
    {
    }
 
-   public void CastSpell(Unit unit, Unit target, Spell currentSpell, int? amount = null)
+   public void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
    {
    }
 
-   public void TakeDamage(Unit unit, int? amount)
+   public void TakeDamage(UnitState unit, int? amount)
    {
    }
 
-   public void HealDamage(Unit unit, int? amount)
+   public void HealDamage(UnitState unit, int? amount)
+   {
+   }
+
+   public void UnitDies(UnitState unit)
    {
    }
 
@@ -112,7 +116,7 @@ internal class NullCombatLog : ICombatLog
    {
    }
 
-   public void Winners(IEnumerable<Unit> winningUnits)
+   public void Winners(IEnumerable<UnitState> winningUnits)
    {
       string text = "The winner is: ";
       var units = winningUnits.ToList();
@@ -123,19 +127,16 @@ internal class NullCombatLog : ICombatLog
       string winners = "";
       foreach (var unit in units)
       {
-         winners += unit.ToString();
+         winners += unit.Unit.ToString();
       }
       Console.WriteLine($"{text} {winners}");
+      Console.WriteLine($"{units.First().Side}");
       Console.WriteLine();
    }
 
    public void TotalRounds(int totalRounds)
    {
       Console.WriteLine($"In a total of {totalRounds} rounds...");
-   }
-
-   public void UnitDies(Unit unit)
-   {
    }
 
    public void Crit(Spell spell)

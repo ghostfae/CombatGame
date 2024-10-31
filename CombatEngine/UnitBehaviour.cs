@@ -5,7 +5,7 @@
 /// </summary>
 public static class UnitBehaviour
 {
-   public static Spell SelectSpell(Unit unit) 
+   public static Spell SelectRandomSpell(UnitState unit) 
    {
       var readySpells = unit.TimedSpells
          .Where(spell => spell.CooldownTimer == 0)
@@ -15,13 +15,13 @@ public static class UnitBehaviour
       return readySpells[randomSelect].Spell;
    }
 
-   public static Unit SelectEnemy(IEnumerable<Unit> availableTargets, Unit self)
+   public static UnitState SelectRandomEnemy(IEnumerable<UnitState> availableTargets, UnitState self)
    {
       var enemies = availableTargets.Where(t => t.Side != self.Side).ToArray();
       return enemies[Rng.Random.Next(enemies.Length)];
    }
 
-   public static Unit SelectAlly(IEnumerable<Unit> availableTargets, Unit self)
+   public static UnitState SelectRandomAlly(IEnumerable<UnitState> availableTargets, UnitState self)
    {
       var allies = availableTargets.Where(t => t.Side == self.Side).ToArray();
       return allies[new Random(1).Next(allies.Length)];
