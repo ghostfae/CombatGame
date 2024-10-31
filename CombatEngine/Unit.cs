@@ -36,9 +36,9 @@ public class Unit
    }
    public (UnitState, Spell) SelectBestMove(CombatState combat, UnitState self)
    {
-      var list = CombatRunner.SimulateCombat(combat, self);
-      var bestCombo = list.MaxBy(v => v.diff);
-      return (bestCombo.target, bestCombo.spell);
+      var list = CombatAI.SimulateSingleCombat(combat, self);
+      var bestCombo = list.MaxBy(v => v.Score);
+      return (bestCombo.Target, bestCombo.Spell)!;
    }
 
    public (UnitState target, Spell spell) ChooseRandomTargetAndSpell(IEnumerable<UnitState> availableTargets)

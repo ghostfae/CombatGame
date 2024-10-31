@@ -185,6 +185,14 @@ public class CombatState
          .Select(kvp => kvp.Value)
          .FirstOrDefault();
    }
+   public UnitState GetNextUnit()
+   {
+      return Combatants
+         .Where(unit => unit.Value is { Health: > 0 })
+         .OrderByDescending(unit => unit.Value.Unit.Speed)
+         .Select(kvp => kvp.Value)
+         .First();
+   }
 
    public Side? TryGetWinningSide()
    {
