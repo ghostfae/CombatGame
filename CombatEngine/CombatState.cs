@@ -176,8 +176,13 @@ public class CombatState
          .Values
          .Where(unit => unit.Health > 0);
    }
+   public bool TryGetNextUnit(out UnitState? nextUnit)
+   {
+      nextUnit = GetNextUnitOrDefault();
+      return nextUnit != null;
+   }
 
-   public UnitState? TryGetNextUnit()
+   public UnitState? GetNextUnitOrDefault()
    {
       return _combatants
          .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
