@@ -10,11 +10,15 @@ namespace CombatEngine;
 public static class CombatRunner
 {
    // returns false when end of round
-   public static bool TryPerformTurn(CombatState combatState, out CombatState? newCombatState, ICombatLog log)
+   public static bool TryPerformTurn(
+      CombatState combatState, 
+      out CombatState? newCombatState,
+      INextMoveStrategy strategy,
+      ICombatLog log)
    {
       if (combatState.TryGetNextUnit(out var nextUnit))
       {
-         newCombatState = PerformTurn(combatState, nextUnit!, log);
+         newCombatState = PerformTurn(combatState, nextUnit!, strategy, log);
          return true;
       }
 
@@ -22,14 +26,14 @@ public static class CombatRunner
       return false;
    }
 
-   public static CombatState PerformTurn(CombatState combatState, UnitState caster, ICombatLog log)
+   public static CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatLog log)
    {
       log.Turn(caster);
 
       caster = caster.Tick().ExhaustTurn();
       combatState = combatState.CloneWith(caster);
 
-      var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());
+      var (target, spell) = strategy.ChooseNextMove(caster, combatState);
 
       combatState = combatState.CastAndApplySpell(caster, target, spell, log);
 
@@ -62,6 +66,7 @@ public static class CombatRunner
 
    public static IEnumerable<UnitState> Run(CombatState combatState, ICombatLog log, ICombatListener listener)
    {
+      var strategy = new RandomMoveStrategy();
       int round = 1;
 
       while (true)
@@ -79,7 +84,7 @@ public static class CombatRunner
             return combatState.GetAliveUnits();
          }
 
-         while (TryPerformTurn(combatState, out var newCombatState,  log))
+         while (TryPerformTurn(combatState, out var newCombatState, strategy, log))
          {
             combatState = newCombatState!;
 
