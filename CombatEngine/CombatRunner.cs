@@ -28,10 +28,7 @@ public static class CombatRunner
 
    public static CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatLog log)
    {
-      log.Turn(caster);
-
-      caster = caster.Tick().ExhaustTurn();
-      combatState = combatState.CloneWith(caster);
+      combatState = combatState.ExhaustTurn(combatState, caster, log);
 
       var (target, spell) = strategy.ChooseNextMove(caster, combatState);
 

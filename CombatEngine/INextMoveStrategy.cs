@@ -7,7 +7,7 @@ public interface INextMoveStrategy
 
 public class RandomMoveStrategy : INextMoveStrategy
 {
-   // TODO: consider all spells opn CD so there's no next move at all (skip turn)
+   // TODO: consider all spells on CD so there's no next move at all (skip turn)
    public (UnitState target, Spell spell) ChooseNextMove(UnitState caster, CombatState combatState)
    {
       var selectedSpell = UnitBehaviour.SelectRandomSpell(caster);

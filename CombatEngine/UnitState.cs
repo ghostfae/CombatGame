@@ -108,11 +108,14 @@ public class UnitState
    {
       var clonedTimedSpells = new List<TimedSpell>(TimedSpells);
       // spellKind is unique within timedSpells
-      var matchingSpell = TimedSpells.First(spell => spell.Spell.Kind == spellKind);
+      var matchingSpell = TimedSpells.FirstOrDefault(spell => spell.Spell.Kind == spellKind);
 
-      clonedTimedSpells.Remove(matchingSpell);
+      if (matchingSpell != null)
+      {
+         clonedTimedSpells.Remove(matchingSpell);
 
-      clonedTimedSpells.Add(matchingSpell.MarkCooldown());
+         clonedTimedSpells.Add(matchingSpell.MarkCooldown());
+      }
 
       return new UnitState(Unit, Side, Health, clonedTimedSpells,
          OverTimeEffects, CanAct, CanActTimer);

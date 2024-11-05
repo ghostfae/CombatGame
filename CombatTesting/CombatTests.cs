@@ -10,10 +10,15 @@ public class Tests
    }
 
    [Test]
-   public void TestDamageWorks()
+   public void TestCombatAI()
    {
-      //var combatants = FightBuilder.CreateScenario1V1();
-      //var combat = new CombatState(combatants[0], combatants[1]);
-      Assert.Pass();
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      var ai = new CombatAI();
+
+      var bestTurn = ai.ChooseNextMove(combatants[0], combat);
+      Console.WriteLine($"best turn is to cast {bestTurn.spell.Kind} at {bestTurn.target.Unit.Name}");
    }
 }
