@@ -2,6 +2,8 @@
 
 public class ConsoleEmptyLog : ICombatLog
 {
+   public static ConsoleEmptyLog Instance = new ();
+
    public void RoundBegins(int round)
    {
    }

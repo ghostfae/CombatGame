@@ -30,15 +30,19 @@ public static class CombatRunner
    {
       combatState = combatState.ExhaustTurn(combatState, caster, log);
 
-      var (target, spell) = strategy.ChooseNextMove(caster, combatState);
-
-      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
-
-      if (target.Health <= 0)
+      var nextMove = strategy.ChooseNextMove(caster, combatState);
+      if (nextMove != null)
       {
-         log.UnitDies(target);
+         var (target, spell) = nextMove.Value;
+         combatState = combatState.CastAndApplySpell(caster, target, spell, log);
+
+         if (target.Health <= 0)
+         {
+            log.UnitDies(target);
+         }
       }
 
+      // skip turn
       return combatState;
    }
 

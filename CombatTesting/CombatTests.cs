@@ -19,6 +19,6 @@ public class Tests
       var ai = new CombatAI();
 
       var bestTurn = ai.ChooseNextMove(combatants[0], combat);
-      Console.WriteLine($"best turn is to cast {bestTurn.spell.Kind} at {bestTurn.target.Unit.Name}");
+      //Console.WriteLine($"best turn is to cast {bestTurn.spell.Kind} at {bestTurn.target.Unit.Name}");
    }
 }

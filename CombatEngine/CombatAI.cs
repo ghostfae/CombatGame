@@ -5,44 +5,68 @@ namespace CombatEngine;
 
 public class CombatAI : INextMoveStrategy
 {
-   private const int depth = 4;
-   public (UnitState target, Spell spell) ChooseNextMove(UnitState caster, CombatState combatState)
+   private const int Depth = 4;
+
+   public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
       var possibleActions = GetPossibleActions(combatState, caster);
+
       var allActions = new Dictionary<(UnitState, Spell), int>();
 
       foreach (var action in possibleActions)
       {
-         allActions.Add(action, 0);
-         allActions[action] = GetScoreForChain(action, combatState, combatState, caster, depth, caster.Side);
+         allActions[action] = GetScoreForChain(action, combatState, combatState, caster, Depth, caster.Side);
          Debug.WriteLine($"targeting {action.target.Unit.Name} with {action.spell.Kind} has a score of {allActions[action]} \n");
       }
-      
+
       var best = allActions
          .OrderByDescending(a => a.Value)
          .FirstOrDefault();
+
       return best.Key;
    }
 
-   private int GetScoreForChain((UnitState target, Spell spell) action, CombatState startCombatState,
-      CombatState newCombatState, UnitState caster, int depth, Side initSide, int currentScore = 0)
+   private int GetScoreForChain(
+      (UnitState target, Spell spell) action,
+      CombatState startCombatState,
+      CombatState newCombatState,
+      UnitState caster,
+      int depth,
+      Side initSide)
    {
-      var oldTurnState = newCombatState;
-      newCombatState = ApplyTurn(action, newCombatState, caster, new ConsoleEmptyLog());
-      if (depth-- > 0)
-      {
-         currentScore = CalculateTotalScore(oldTurnState, newCombatState, initSide);
+      var oldTurnState = newCombatState; // for debugging only
 
-         Debug.WriteLine($"caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}," +
-                           $"current score is {currentScore}");
-         caster = newCombatState.GetNextUnit(caster);
-         var newAction = caster.Unit.ChooseTargetAndSpell(newCombatState.GetAliveUnits());
-         return GetScoreForChain(newAction, startCombatState, newCombatState, caster, depth, initSide, currentScore);
+      newCombatState = ApplyTurn(action, newCombatState, caster, ConsoleEmptyLog.Instance);
+
+      if (depth == 0)
+      {
+         Debug.WriteLine("End of current chain \n");
+         // calculate the score and return
+         return CalculateTotalScore(startCombatState, newCombatState, initSide);
       }
 
-      Debug.WriteLine("End of current chain \n");
-      // calculate the score and return
-      return CalculateTotalScore(startCombatState, newCombatState, initSide);
+      DebugLogCurrentScore(action, newCombatState, caster, initSide, oldTurnState);
+
+      caster = newCombatState.GetNextUnit(caster);
+      var newAction = caster.Unit.ChooseTargetAndSpell(newCombatState.GetAliveUnits());
+
+      return GetScoreForChain(
+         newAction, 
+         startCombatState, 
+         newCombatState, 
+         caster, 
+         depth - 1,
+         initSide);
+   }
+
+   private static void DebugLogCurrentScore((UnitState target, Spell spell) action, CombatState newCombatState,
+      UnitState caster, Side initSide, CombatState oldTurnState)
+   {
+      var currentScore = CalculateTotalScore(oldTurnState, newCombatState, initSide);
+
+      Debug.WriteLine(
+         $"caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}," +
+         $"current score is {currentScore}");
    }
 
    private static int CalculateTotalScore(CombatState oldState, CombatState newState, Side initSide)
