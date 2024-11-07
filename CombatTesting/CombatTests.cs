@@ -10,7 +10,7 @@ public class Tests
    }
 
    [Test]
-   public void TestCombatAI()
+   public void TestCombatAIDefault()
    {
       var classBuilder = new ClassBuilder();
 
@@ -20,5 +20,7 @@ public class Tests
 
       var bestTurn = ai.ChooseNextMove(combatants[0], combat);
       //Console.WriteLine($"best turn is to cast {bestTurn.spell.Kind} at {bestTurn.target.Unit.Name}");
+
+      //best turn is ShieldBash
    }
 }

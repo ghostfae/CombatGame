@@ -1,7 +1,7 @@
-﻿using System.Diagnostics;
-using System.Drawing;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
+public record ScoredAction(UnitState Target, Spell Spell, int Score)
+{ }
 
 public class CombatAI : INextMoveStrategy
 {
@@ -11,20 +11,24 @@ public class CombatAI : INextMoveStrategy
    {
       var possibleActions = GetPossibleActions(combatState, caster);
 
-      var allActions = new Dictionary<(UnitState, Spell), int>();
+      var allActions = new List<ScoredAction>();
 
       foreach (var action in possibleActions)
       {
-         allActions[action] = GetScoreForChain(action, combatState, combatState, caster, Depth, caster.Side);
-         Debug.WriteLine($"targeting {action.target.Unit.Name} with {action.spell.Kind} has a score of {allActions[action]} \n");
+         var score = GetScoreForChain(action, combatState, combatState, caster, Depth, caster.Side);
+         var scoredAction = new ScoredAction(action.target, action.spell, score);
+         allActions.Add(scoredAction);
+         Console.WriteLine($"Target: {scoredAction.Target.Unit.Name}, Spell: {scoredAction.Spell.Kind}, Score: {score}\n");
       }
 
       var best = allActions
-         .OrderByDescending(a => a.Value)
+         .OrderByDescending(a => a.Score)
          .FirstOrDefault();
 
-      return best.Key;
+      return (best.Target, best.Spell);
    }
+
+   //private void 
 
    private int GetScoreForChain(
       (UnitState target, Spell spell) action,
@@ -34,18 +38,16 @@ public class CombatAI : INextMoveStrategy
       int depth,
       Side initSide)
    {
-      var oldTurnState = newCombatState; // for debugging only
-
       newCombatState = ApplyTurn(action, newCombatState, caster, ConsoleEmptyLog.Instance);
 
       if (depth == 0)
       {
-         Debug.WriteLine("End of current chain \n");
+         Console.WriteLine("End of current chain");
          // calculate the score and return
-         return CalculateTotalScore(startCombatState, newCombatState, initSide);
+         return CalculateTotalScoreForSide(newCombatState, initSide);
       }
 
-      DebugLogCurrentScore(action, newCombatState, caster, initSide, oldTurnState);
+      DebugLogCurrentScore(action, caster, depth);
 
       caster = newCombatState.GetNextUnit(caster);
       var newAction = caster.Unit.ChooseTargetAndSpell(newCombatState.GetAliveUnits());
@@ -59,44 +61,19 @@ public class CombatAI : INextMoveStrategy
          initSide);
    }
 
-   private static void DebugLogCurrentScore((UnitState target, Spell spell) action, CombatState newCombatState,
-      UnitState caster, Side initSide, CombatState oldTurnState)
-   {
-      var currentScore = CalculateTotalScore(oldTurnState, newCombatState, initSide);
 
-      Debug.WriteLine(
-         $"caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}," +
-         $"current score is {currentScore}");
+   private static void DebugLogCurrentScore((UnitState target, Spell spell) action,
+      UnitState caster, int depth)
+   {
+      Console.WriteLine(
+         $"at depth {depth}: caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}");
    }
 
-   private static int CalculateTotalScore(CombatState oldState, CombatState newState, Side initSide)
+
+   private static int CalculateTotalScoreForSide(CombatState state, Side side)
    {
-      var allies = newState.Combatants.Where(u => u.Value.Side == initSide).ToArray();
-
-      var enemies = newState.Combatants.Where(u => u.Value.Side != initSide).ToArray();
-
-      int allyScore = 0;
-      foreach (var ally in allies)
-      {
-         allyScore += CalculateUnitScore(oldState, newState, ally.Value);
-      }
-
-      int enemyScore = 0;
-      foreach (var enemy in enemies)
-      {
-         enemyScore += CalculateUnitScore(oldState, newState, enemy.Value);
-      }
-
-      return allyScore - enemyScore;
-   }
-
-   private static int CalculateUnitScore(CombatState oldState, CombatState newState, UnitState unit)
-   {
-      var oldHealth = oldState.Combatants.First(u => u.Key == unit.Unit.Uid).Value.Health;
-      var newHealth = newState.Combatants.First(u => u.Key == unit.Unit.Uid).Value.Health;
-
-      // if health has increased, diff will be positive; if health has decreased, diff will be negative
-      return newHealth - oldHealth;
+      // for now, we only take the sum of ally health - sum of enemy health
+      return state.Combatants.Values.Sum(unit => unit.Health * (unit.Side == side ? 1 : -1));
    }
 
    public CombatState ApplyTurn((UnitState target, Spell spell) action, CombatState combatState, UnitState caster,

@@ -2,6 +2,9 @@
 
 public class CombatState
 {
+   /// <summary>
+   /// Combatants by Unit ID including dead Units
+   /// </summary>
    public readonly Dictionary<int, UnitState> Combatants;
 
    public CombatState(IEnumerable<UnitState> combatants)
