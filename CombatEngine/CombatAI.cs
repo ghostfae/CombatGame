@@ -4,7 +4,7 @@ public class CombatAI : INextMoveStrategy
 {
    private const int Depth = 4;
    private const int MaxSimulations = 100;
-   private const int TopSimulationsToAnalyse = 10;
+   private const int TopSimulationsToAnalyse = MaxSimulations / 10;
 
    public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
