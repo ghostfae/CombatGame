@@ -53,7 +53,7 @@ public static class CombatRunner
       caster = caster.Tick().ExhaustTurn();
       combatState = combatState.CloneWith(caster);
 
-      var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());
+      var (target, spell) = caster.Unit.ChooseRandomTargetAndSpell(combatState.GetAliveUnits());
 
       combatState = combatState.CastAndApplySpell(caster, target, spell, log);
 

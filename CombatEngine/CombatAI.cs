@@ -1,4 +1,6 @@
-﻿namespace CombatEngine;
+﻿using System;
+
+namespace CombatEngine;
 
 public record ScoredAction(UnitState Target, Spell Spell, int Score)
 { }
@@ -6,61 +8,119 @@ public record ScoredAction(UnitState Target, Spell Spell, int Score)
 public class CombatAI : INextMoveStrategy
 {
    private const int Depth = 4;
+   private const int MaxSimulations = 100;
+   private const int TopSimulationsToAnalyse = 10;
+
+   public (UnitState target, Spell spell)? ChooseNextMove2(UnitState caster, CombatState combatState)
+   {
+      // TODO: if no targets or no spells, return null
+
+      var scoredActions = Enumerable
+         .Range(0, MaxSimulations)
+         .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
+         .OrderByDescending(scoredAction => scoredAction.Score)
+         .Take(TopSimulationsToAnalyse)
+         .GroupBy()
+
+   }
 
    public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
-      var possibleActions = GetPossibleActions(combatState, caster);
-
       var allActions = new List<ScoredAction>();
 
-      foreach (var action in possibleActions)
+      // simulate scored actions
+      for(int i = 0; i < MaxSimulations; i++)
       {
-         var score = GetScoreForChain(action, combatState, combatState, caster, Depth, caster.Side);
-         var scoredAction = new ScoredAction(action.target, action.spell, score);
+         var scoredAction = EvaluateChain(combatState, caster, Depth, caster.Side);
          allActions.Add(scoredAction);
-         Console.WriteLine($"Target: {scoredAction.Target.Unit.Name}, Spell: {scoredAction.Spell.Kind}, Score: {score}\n");
+         Console.WriteLine($"Target: {scoredAction.Target.Unit.Name}, Spell: {scoredAction.Spell.Kind}, Score: {scoredAction.Score}\n");
       }
 
-      var best = allActions
-         .OrderByDescending(a => a.Score)
-         .FirstOrDefault();
+      // get average of each, find best
 
-      return (best.Target, best.Spell);
+      // TODO: if empty, return null
+
+      var best = GetActionAverages(allActions)
+         .Max(a => a.Score);
+
+      return best != null ? (best.Target, best.Spell) : null;
    }
 
-   //private void 
+   private IEnumerable<ScoredAction> GetActionAverages(IEnumerable<ScoredAction> allActions)
+   {
+      var groupedActions = allActions
+         .GroupBy(a => (a.Spell, a.Target));
+         
+      var actionAverages = new List<ScoredAction>();
 
-   private int GetScoreForChain(
-      (UnitState target, Spell spell) action,
-      CombatState startCombatState,
-      CombatState newCombatState,
+      foreach (var grouping in groupedActions)
+      {
+         var average = GetAverage(grouping.Select(a => a.Score).ToArray());
+         var action = new ScoredAction(grouping.Key.Target, grouping.Key.Spell, average);
+         Console.WriteLine($"casting {action.Spell.Kind} at {action.Target.Unit.Name} has average score of {average}");
+         actionAverages.Add(action);
+      }
+
+      return actionAverages;
+   }
+
+   private int GetAverage(int[] scores)
+   {
+      return scores.Sum() / scores.Length;
+   }
+
+   private ScoredAction EvaluateChain(
+      CombatState combatState,
       UnitState caster,
       int depth,
       Side initSide)
    {
-      newCombatState = ApplyTurn(action, newCombatState, caster, ConsoleEmptyLog.Instance);
+      var firstCasterAction = ChooseRandomTargetAndSpell(caster, combatState.GetAliveUnits());
 
-      if (depth == 0)
+      var currentAction = firstCasterAction;
+      var currentCaster = caster;
+
+      while (depth > 0)
       {
-         Console.WriteLine("End of current chain");
-         // calculate the score and return
-         return CalculateTotalScoreForSide(newCombatState, initSide);
+         combatState = ApplyTurn(currentAction, combatState, currentCaster, ConsoleEmptyLog.Instance);
+
+         DebugLogCurrentScore(currentAction, currentCaster, depth);
+         currentCaster = combatState.GetNextTurnUnit(currentCaster);
+
+         if (GetWin(combatState.Combatants.Values, currentCaster))
+            break;
+
+         currentAction = ChooseRandomTargetAndSpell(currentCaster, combatState.GetAliveUnits());
+         depth--;
       }
 
-      DebugLogCurrentScore(action, caster, depth);
-
-      caster = newCombatState.GetNextUnit(caster);
-      var newAction = caster.Unit.ChooseTargetAndSpell(newCombatState.GetAliveUnits());
-
-      return GetScoreForChain(
-         newAction, 
-         startCombatState, 
-         newCombatState, 
-         caster, 
-         depth - 1,
-         initSide);
+      Console.WriteLine("End of current chain");
+      // calculate the score and return
+      return new ScoredAction(firstCasterAction.target, firstCasterAction.spell,
+         CalculateTotalScoreForSide(combatState, initSide));
    }
 
+   private static bool GetWin(IEnumerable<UnitState> combatants, UnitState caster)
+   {
+      return combatants.All(u => u.Side == caster.Side);
+   }
+
+   private static (UnitState target, Spell spell) ChooseRandomTargetAndSpell(UnitState caster, IEnumerable<UnitState> availableTargets)
+   {
+      var selectedSpell = UnitBehaviour.SelectRandomSpell(caster);
+      var allTargets = new List<UnitState>();
+
+      foreach (var state in availableTargets)
+      {
+         allTargets.Add(state);
+      }
+
+      var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
+         UnitBehaviour.SelectRandomEnemy(allTargets, caster)
+         : UnitBehaviour.SelectRandomAlly(allTargets, caster);
+
+      return (selectedTarget, selectedSpell);
+   }
 
    private static void DebugLogCurrentScore((UnitState target, Spell spell) action,
       UnitState caster, int depth)

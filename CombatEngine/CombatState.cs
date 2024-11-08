@@ -195,6 +195,9 @@ public class CombatState
       return nextUnit != null;
    }
 
+   /// <summary>
+   /// returns null when round ends
+   /// </summary>
    public UnitState? GetNextUnitOrDefault()
    {
       return Combatants
@@ -203,15 +206,15 @@ public class CombatState
          .Select(kvp => kvp.Value)
          .FirstOrDefault();
    }
-   public UnitState GetNextUnit(UnitState lastUnit)
+
+   public UnitState GetNextTurnUnit(UnitState lastUnit)
    {
-      var nextUnit = Combatants
+      return Combatants
+         .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
          .OrderByDescending(unit => unit.Value.Unit.Speed)
          .Where(u => u.Key != lastUnit.Unit.Uid)
          .Select(kvp => kvp.Value)
-         .FirstOrDefault();
-      return nextUnit ?? lastUnit;
-
+         .FirstOrDefault(lastUnit);
    }
    public Side? TryGetWinningSide()
    {

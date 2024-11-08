@@ -1,6 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
 /// <summary>
 /// state that updates whenever a unit casts or reacts to a spell;
 /// a mutable version of the unit
@@ -163,6 +162,7 @@ public class UnitState
          }
       }
 
+      // TODO: not used
       var overTimeEffects
          = updatedState.OverTimeEffects.Except(elementsToRemove);
 
@@ -192,5 +192,4 @@ public class UnitState
          $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Side)}: {Side}, {nameof(Health)}: {Health}," +
          $"  {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
-
 }

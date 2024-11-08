@@ -35,7 +35,7 @@ public class Unit
       State = state;
    }
 
-   public (UnitState target, Spell spell) ChooseTargetAndSpell(IEnumerable<UnitState> availableTargets)
+   public (UnitState target, Spell spell) ChooseRandomTargetAndSpell(IEnumerable<UnitState> availableTargets)
    {
       var selectedSpell = UnitBehaviour.SelectRandomSpell(State);
       var allTargets = new List<UnitState>();
