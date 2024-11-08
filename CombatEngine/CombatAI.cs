@@ -1,9 +1,4 @@
-﻿using System;
-
-namespace CombatEngine;
-
-public record ScoredAction(UnitState Target, Spell Spell, int Score)
-{ }
+﻿namespace CombatEngine;
 
 public class CombatAI : INextMoveStrategy
 {
@@ -11,7 +6,7 @@ public class CombatAI : INextMoveStrategy
    private const int MaxSimulations = 100;
    private const int TopSimulationsToAnalyse = 10;
 
-   public (UnitState target, Spell spell)? ChooseNextMove2(UnitState caster, CombatState combatState)
+   public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
       // TODO: if no targets or no spells, return null
 
@@ -19,12 +14,21 @@ public class CombatAI : INextMoveStrategy
          .Range(0, MaxSimulations)
          .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
          .OrderByDescending(scoredAction => scoredAction.Score)
-         .Take(TopSimulationsToAnalyse)
-         .GroupBy()
+         .ToArray(); //todo: remove, only used for debugging
 
+
+      var bestAction = scoredActions
+         .Take(TopSimulationsToAnalyse)
+         .GroupBy(scoredAction => scoredAction, ScoredActionComparer.Instance)
+         .MaxBy(grouping => grouping.Count())
+         ?.First();
+
+      return bestAction != null
+         ? (bestAction.Target, bestAction.Spell)
+         : null;
    }
 
-   public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
+   public (UnitState target, Spell spell)? ChooseNextMove2(UnitState caster, CombatState combatState)
    {
       var allActions = new List<ScoredAction>();
 
@@ -41,7 +45,7 @@ public class CombatAI : INextMoveStrategy
       // TODO: if empty, return null
 
       var best = GetActionAverages(allActions)
-         .Max(a => a.Score);
+         .MaxBy(a => a.Score);
 
       return best != null ? (best.Target, best.Spell) : null;
    }
@@ -102,8 +106,27 @@ public class CombatAI : INextMoveStrategy
 
    private static bool GetWin(IEnumerable<UnitState> combatants, UnitState caster)
    {
-      return combatants.All(u => u.Side == caster.Side);
+      return combatants
+         .Where(u => u.Health > 0)
+         .All(u => u.Side == caster.Side);
    }
+
+   //private static bool TryChooseRandomTargetAndSpell(UnitState caster, IEnumerable<UnitState> availableTargets, out UnitState target, out Spell spell)
+   //{
+   //   var selectedSpell = UnitBehaviour.SelectRandomSpell(caster);
+   //   var allTargets = new List<UnitState>();
+
+   //   foreach (var state in availableTargets)
+   //   {
+   //      allTargets.Add(state);
+   //   }
+
+   //   var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
+   //      UnitBehaviour.SelectRandomEnemy(allTargets, caster)
+   //      : UnitBehaviour.SelectRandomAlly(allTargets, caster);
+
+   //   return (selectedTarget, selectedSpell);
+   //}
 
    private static (UnitState target, Spell spell) ChooseRandomTargetAndSpell(UnitState caster, IEnumerable<UnitState> availableTargets)
    {
