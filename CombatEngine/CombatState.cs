@@ -43,7 +43,7 @@ public class CombatState
       return CloneWith(updatedCaster, updatedTarget);
    }
 
-   private CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
+   public CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
    {
       var clone = new Dictionary<int, UnitState>(Combatants);
       foreach (var unit in updatedUnits)
@@ -172,15 +172,18 @@ public class CombatState
 
    public CombatState ResetRound()
    {
-      foreach (var unit in Combatants)
+      return CloneWith(ResetCombatants());
+   }
+
+   public IEnumerable<UnitState> ResetCombatants()
+   {
+      foreach (var unit in Combatants.Values)
       {
-         if (unit.Value.CanAct || unit.Value.CanActTimer == 0)
+         if (unit is { Health: > 0, CanActTimer: 0 })
          {
-            unit.Value.ResetRound();
+            yield return unit.ResetRound();
          }
       }
-
-      return CloneWith(Combatants.Values);
    }
 
    public IEnumerable<UnitState> GetAliveUnits()
@@ -189,6 +192,7 @@ public class CombatState
          .Values
          .Where(unit => unit.Health > 0);
    }
+
    public bool TryGetNextUnit(out UnitState? nextUnit)
    {
       nextUnit = GetNextUnitOrDefault();

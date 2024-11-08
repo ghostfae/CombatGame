@@ -12,14 +12,14 @@ public class ClassBuilder
       return new Unit(
          uid: Uid++,
          kind: UnitKind.Warrior,
-         initialHealth: 100,
+         initialHealth: 150,
          speed: 6,
          side: side,
          name: NameGenerator.GenerateName(),
          SpellBook.CreateSwordHit(),
          SpellBook.CreateShieldBash(),
-         SpellBook.CreateHealthPotion(),
-         SpellBook.CreateHealthDurationPotion());
+         SpellBook.CreateHealthPotion()//,
+         /*SpellBook.CreateHealthDurationPotion()*/);
       ;
    }
 
@@ -28,13 +28,13 @@ public class ClassBuilder
       return new Unit(
          uid: Uid++,
          kind: UnitKind.Mage,
-         initialHealth: 80,
+         initialHealth: 100,
          speed: 5,
          side: side,
          name: NameGenerator.GenerateName(),
          SpellBook.CreateFrostBolt(),
          SpellBook.CreateFireSnap(),
-         SpellBook.CreateHealthPotion(),
-         SpellBook.CreateHealthDurationPotion());
+         SpellBook.CreateHealthPotion()//,
+         /*SpellBook.CreateHealthDurationPotion()*/);
    }
 }

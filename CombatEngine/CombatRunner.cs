@@ -28,46 +28,30 @@ public static class CombatRunner
 
    public static CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatLog log)
    {
+      if (!caster.CanAct)
+         return combatState;
+
       combatState = combatState.ExhaustTurn(combatState, caster, log);
+      caster = combatState.Combatants[caster.Unit.Uid];
 
       var nextMove = strategy.ChooseNextMove(caster, combatState);
-      if (nextMove != null)
-      {
-         var (target, spell) = nextMove.Value;
-         combatState = combatState.CastAndApplySpell(caster, target, spell, log);
-
-         if (target.Health <= 0)
-         {
-            log.UnitDies(target);
-         }
-      }
-
-      // skip turn
-      return combatState;
-   }
-
-   public static CombatState PerformTurn2(CombatState combatState, UnitState caster, ICombatLog log)
-   {
-      log.Turn(caster);
-
-      caster = caster.Tick().ExhaustTurn();
-      combatState = combatState.CloneWith(caster);
-
-      var (target, spell) = caster.Unit.ChooseRandomTargetAndSpell(combatState.GetAliveUnits());
-
+      
+      if (nextMove == null) 
+         return combatState;
+      
+      var (target, spell) = nextMove.Value;
       combatState = combatState.CastAndApplySpell(caster, target, spell, log);
 
       if (target.Health <= 0)
       {
          log.UnitDies(target);
       }
-
       return combatState;
    }
 
    public static IEnumerable<UnitState> Run(CombatState combatState, ICombatLog log, ICombatListener listener)
    {
-      var strategy = new RandomMoveStrategy();
+      var strategy = new CombatAI();
       int round = 1;
 
       while (true)

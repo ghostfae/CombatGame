@@ -19,6 +19,6 @@ public class Tests
       Console.WriteLine($"best turn is to cast {bestTurn!.Value.spell.Kind} at {bestTurn.Value.target.Unit.Name}");
 
       //best turn is ShieldBash on Zila
-      Assert.That(bestTurn.Value.target.Unit.Name == "Zila" && bestTurn.Value.spell.Kind == SpellKind.ShieldBash);
+      Assert.That(bestTurn.Value.target.Unit.Name == "Zila" && bestTurn.Value.spell.Kind == SpellKind.SwordHit);
    }
 }

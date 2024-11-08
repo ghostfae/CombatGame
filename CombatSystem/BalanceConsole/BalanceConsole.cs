@@ -59,7 +59,7 @@ internal class BalanceConsole
 static IEnumerable<UnitState> RunGameInstance()
    {
       //Rng.ReplaceSeed(new Random().Next());
-      var combatants = FightBuilder.CreateScenario2V2(new ClassBuilder());
+      var combatants = FightBuilder.CreateScenario1V1(new ClassBuilder());
 
       var combat = new CombatState(combatants);
 

@@ -1,7 +1,7 @@
 ﻿namespace CombatEngine;
 
 // todo: xml docs
-public record ScoredAction(UnitState Target, Spell Spell, int Score)
+public record ScoredAction(int TargetUid, Spell Spell, int Score)
 { 
 }
 
@@ -13,7 +13,7 @@ public class ScoredActionComparer : IEqualityComparer<ScoredAction>
    {
       if (ReferenceEquals(x, y)) return true;
       if (x is null || y is null) return false;
-      return x.Target.Unit.Uid == y.Target.Unit.Uid &&
+      return x.TargetUid == y.TargetUid &&
              x.Spell.Kind == y.Spell.Kind;
    }
 

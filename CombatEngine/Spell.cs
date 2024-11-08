@@ -43,19 +43,20 @@ public static class SpellBook
    public static Spell CreateShieldBash()
    {
       return CreateSpell(SpellKind.ShieldBash, 3, 
-         SpellEffect.CreateDirectDamage(15, 30, 5, 2));
+         SpellEffect.CreateDirectDamage(5, 15, 5, 2),
+         SpellEffect.CreateSkipTurn());
    }
 
    public static Spell CreateFrostBolt()
    {
       return CreateSpell(SpellKind.FrostBolt, 0,
-         SpellEffect.CreateDirectDamage(30, 30, 5, 3),
+         SpellEffect.CreateDirectDamage(15, 30, 5, 3),
          SpellEffect.CreateSkipTurn());
    }
    public static Spell CreateFireSnap()
    {
       return CreateSpell(SpellKind.FireSnap, 3, 
-         SpellEffect.CreateOverTimeDamage(30, 45, 2));
+         SpellEffect.CreateOverTimeDamage(35, 45, 2));
    }
 
    public static Spell CreateHealthPotion()

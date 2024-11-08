@@ -24,6 +24,10 @@ public class FightBuilder
    {
        return [AddWarrior(Side.Red, builder), AddMage(Side.Blue, builder)];
    }
+   public static UnitState[] CreateScenario1V1Warrior(ClassBuilder builder)
+   {
+      return [AddWarrior(Side.Red, builder), AddWarrior(Side.Blue, builder)];
+   }
    public static UnitState[] CreateScenario2V2(ClassBuilder builder)
    {
       return [AddWarrior(Side.Red, builder), AddWarrior(Side.Blue, builder), AddMage(Side.Red, builder), AddMage(Side.Blue, builder)];

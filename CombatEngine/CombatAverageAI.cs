@@ -1,30 +1,49 @@
 ﻿namespace CombatEngine;
 
-public class CombatAI : INextMoveStrategy
+public class CombatAverageAI : INextMoveStrategy
 {
    private const int Depth = 4;
    private const int MaxSimulations = 100;
-   private const int TopSimulationsToAnalyse = MaxSimulations / 10;
+
 
    public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
-      // TODO: if no targets or no spells, return null
-      var scoredActions = Enumerable
-         .Range(0, MaxSimulations)
-         .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
-         .OrderByDescending(scoredAction => scoredAction.Score)
-         .ToArray(); //todo: remove, only used for debugging
+      var allActions = new List<ScoredAction>();
 
+      // simulate scored actions
+      for (int i = 0; i < MaxSimulations; i++)
+      {
+         var scoredAction = EvaluateChain(combatState, caster, Depth, caster.Side);
+         allActions.Add(scoredAction);
+         //Console.WriteLine($"Target: {scoredAction.Target.Unit.Name}, Spell: {scoredAction.Spell.Kind}, Score: {scoredAction.Score}\n");
+      }
 
-      var bestAction = scoredActions
-         .Take(TopSimulationsToAnalyse)
-         .GroupBy(scoredAction => scoredAction, ScoredActionComparer.Instance)
-         .MaxBy(grouping => grouping.Count())
-         ?.First();
+      // get average of each, find best
 
-      return bestAction != null
-         ? (combatState.Combatants[bestAction.TargetUid], bestAction.Spell)
-         : null;
+      // TODO: if empty, return null
+
+      var best = GetActionAverages(allActions)
+         .MaxBy(a => a.Score);
+
+      return best != null ? (combatState.Combatants[best.TargetUid], best.Spell) : null;
+   }
+
+   private IEnumerable<ScoredAction> GetActionAverages(IEnumerable<ScoredAction> allActions)
+   {
+      var groupedActions = allActions
+         .GroupBy(a => (a.Spell, a.TargetUid));
+
+      var actionAverages = new List<ScoredAction>();
+
+      foreach (var grouping in groupedActions)
+      {
+         var average = GetAverage(grouping.Select(a => a.Score).ToArray());
+         var action = new ScoredAction(grouping.Key.TargetUid, grouping.Key.Spell, average);
+        // Console.WriteLine($"casting {action.Spell.Kind} at {action.Target.Unit.Name} has average score of {average}");
+         actionAverages.Add(action);
+      }
+
+      return actionAverages;
    }
 
    public int GetAverage(int[] scores)
@@ -63,7 +82,7 @@ public class CombatAI : INextMoveStrategy
          CalculateTotalScoreForSide(combatState, initSide));
    }
 
-   private static bool GetWin(IEnumerable<UnitState> combatants, UnitState caster)
+   private bool GetWin(IEnumerable<UnitState> combatants, UnitState caster)
    {
       return combatants
          .Where(u => u.Health > 0)
@@ -106,14 +125,13 @@ public class CombatAI : INextMoveStrategy
    {
       if (caster.CanAct != true)
       {
-         if(!combatState.TryGetNextUnit(out var unit))
-            combatState = ResetRound(combatState);
+         if (!combatState.TryGetNextUnit(out var unit))
+            combatState = combatState.ResetRound();
 
          return combatState;
       }
 
       combatState = combatState.ExhaustTurn(combatState, caster, log);
-      caster = combatState.Combatants[caster.Unit.Uid];
 
       combatState = CastAndApplySpell(combatState, caster, action.target, action.spell, log);
 
@@ -124,6 +142,7 @@ public class CombatAI : INextMoveStrategy
 
       return combatState;
    }
+
    public CombatState CastAndApplySpell(CombatState state, UnitState caster, UnitState target, Spell spell, ICombatLog log)
    {
       var (damage, updatedCaster) = state.CastSpell(caster, target, spell, log);
@@ -134,21 +153,4 @@ public class CombatAI : INextMoveStrategy
 
       return state.CloneWith(updatedCaster, updatedTarget);
    }
-
-   public CombatState ResetRound(CombatState state)
-   {
-      return state.CloneWith(ResetCombatants(state));
-   }
-
-   public IEnumerable<UnitState> ResetCombatants(CombatState state)
-   {
-      foreach (var unit in state.Combatants.Values)
-      {
-         if (unit.IsAlive() && (unit.CanAct || unit.CanActTimer == 0))
-         {
-            yield return unit.ResetRound();
-         }
-      }
-   }
-
 }
