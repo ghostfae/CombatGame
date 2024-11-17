@@ -21,7 +21,7 @@ public class SpellEffect
    public int? Duration { get; }
 
    /// <summary>
-   /// Crit chance in percents
+   /// LogCrit chance in percents
    /// </summary>
    public int CritChance { get; }
    public int CritModifier { get; }

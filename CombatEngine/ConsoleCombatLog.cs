@@ -5,25 +5,25 @@
 /// </summary>
 public class ConsoleCombatLog : ICombatLog
 {
-   public void RoundBegins(int round)
+   public void LogRoundBegins(int round)
    {
       Console.WriteLine();
       Console.WriteLine($"BEGIN ROUND {round}");
       Console.WriteLine();
    }
 
-   public void UpkeepBegins() 
+   public void LogUpkeepBegins() 
    {
       Console.WriteLine($"Upkeep begins.");
    }
 
-   public void UpkeepEnds()
+   public void LogUpkeepEnds()
    {
       Console.WriteLine($"Upkeep ends.");
       Console.WriteLine();
    }
 
-   public void ReportSides(IEnumerable<UnitState> units)
+   public void LogReportSides(IEnumerable<UnitState> units)
    {
       var sides = units
          .GroupBy(unit => unit.Side)
@@ -44,13 +44,13 @@ public class ConsoleCombatLog : ICombatLog
       }
    }
 
-   public void Turn(UnitState unit)
+   public void LogTurn(UnitState unit)
    {
       Console.WriteLine();
       Console.WriteLine($"It is {unit.Unit}'s turn.");
    }
 
-   public void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
+   public void LogCastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
    {
       //var type = new string("");
 
@@ -68,7 +68,7 @@ public class ConsoleCombatLog : ICombatLog
       }
    }
 
-   public void TakeDamage(UnitState unit, int? amount)
+   public void LogTakeDamage(UnitState unit, int? amount)
    {
       if (amount.HasValue)
       {
@@ -76,7 +76,7 @@ public class ConsoleCombatLog : ICombatLog
       }
    }
 
-   public void HealDamage(UnitState unit, int? amount)
+   public void LogHealDamage(UnitState unit, int? amount)
    {
       if (amount.HasValue)
       {
@@ -84,12 +84,12 @@ public class ConsoleCombatLog : ICombatLog
       }
    }
 
-   public void Win(Side winningSide)
+   public void LogWin(Side winningSide)
    {
       Console.WriteLine($"{winningSide} wins!");
    }
 
-   public void Winners(IEnumerable<UnitState> winningUnits)
+   public void LogWinners(IEnumerable<UnitState> winningUnits)
    {
       Console.WriteLine($"The winners are:");
       foreach (var unit in winningUnits)
@@ -98,16 +98,16 @@ public class ConsoleCombatLog : ICombatLog
       }
    }
 
-   public void TotalRounds(int totalRounds)
+   public void LogTotalRounds(int totalRounds)
    {
    }
 
-   public void UnitDies(UnitState unit)
+   public void LogUnitDies(UnitState unit)
    {
       Console.WriteLine($"{unit.Unit} dies.");
    }
 
-   public void Crit(Spell spell)
+   public void LogCrit(Spell spell)
    {
       Console.WriteLine($"{spell.Kind} has crit!");
    }

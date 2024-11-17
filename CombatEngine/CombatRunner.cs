@@ -44,7 +44,7 @@ public static class CombatRunner
 
       if (target.Health <= 0)
       {
-         log.UnitDies(target);
+         log.LogUnitDies(target);
       }
       return combatState;
    }
@@ -56,13 +56,13 @@ public static class CombatRunner
 
       while (true)
       {
-         log.RoundBegins(round);
+         log.LogRoundBegins(round);
 
-         log.UpkeepBegins();
+         log.LogUpkeepBegins();
          combatState = combatState.Upkeep(log);
-         log.UpkeepEnds();
+         log.LogUpkeepEnds();
 
-         log.ReportSides(combatState.GetAliveUnits());
+         log.LogReportSides(combatState.GetAliveUnits());
 
          if (GetWin(combatState, round, log) != null)
          {
@@ -90,9 +90,9 @@ public static class CombatRunner
       var winningSide = combatStateInstance.TryGetWinningSide();
       if (winningSide != null)
       {
-         log.TotalRounds(round);
-         log.Win(winningSide.Value);
-         log.Winners(combatStateInstance.GetAliveUnits());
+         log.LogTotalRounds(round);
+         log.LogWin(winningSide.Value);
+         log.LogWinners(combatStateInstance.GetAliveUnits());
          return combatStateInstance.GetAliveUnits();
       }
 

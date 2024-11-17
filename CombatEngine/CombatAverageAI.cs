@@ -137,7 +137,7 @@ public class CombatAverageAI : INextMoveStrategy
 
       if (action.target.Health <= 0)
       {
-         log.UnitDies(action.target);
+         log.LogUnitDies(action.target);
       }
 
       return combatState;

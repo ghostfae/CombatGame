@@ -76,47 +76,47 @@ internal class NullCombatListener : ICombatListener
 
 internal class NullCombatLog : ICombatLog
 {
-   public void RoundBegins(int round)
+   public void LogRoundBegins(int round)
    {
    }
 
-   public void UpkeepBegins()
+   public void LogUpkeepBegins()
    {
    }
 
-   public void UpkeepEnds()
+   public void LogUpkeepEnds()
    {
    }
 
-   public void ReportSides(IEnumerable<UnitState> units)
+   public void LogReportSides(IEnumerable<UnitState> units)
    {
    }
 
-   public void Turn(UnitState unit)
+   public void LogTurn(UnitState unit)
    {
    }
 
-   public void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
+   public void LogCastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
    {
    }
 
-   public void TakeDamage(UnitState unit, int? amount)
+   public void LogTakeDamage(UnitState unit, int? amount)
    {
    }
 
-   public void HealDamage(UnitState unit, int? amount)
+   public void LogHealDamage(UnitState unit, int? amount)
    {
    }
 
-   public void UnitDies(UnitState unit)
+   public void LogUnitDies(UnitState unit)
    {
    }
 
-   public void Win(Side winningSide)
+   public void LogWin(Side winningSide)
    {
    }
 
-   public void Winners(IEnumerable<UnitState> winningUnits)
+   public void LogWinners(IEnumerable<UnitState> winningUnits)
    {
       string text = "The winner is: ";
       var units = winningUnits.ToList();
@@ -134,12 +134,12 @@ internal class NullCombatLog : ICombatLog
       Console.WriteLine();
    }
 
-   public void TotalRounds(int totalRounds)
+   public void LogTotalRounds(int totalRounds)
    {
       Console.WriteLine($"In a total of {totalRounds} rounds...");
    }
 
-   public void Crit(Spell spell)
+   public void LogCrit(Spell spell)
    {
    }
 }

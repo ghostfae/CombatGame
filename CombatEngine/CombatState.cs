@@ -26,7 +26,7 @@ public class CombatState
 
    public CombatState ExhaustTurn(CombatState combatState, UnitState caster, ICombatLog log)
    {
-      log.Turn(caster);
+      log.LogTurn(caster);
 
       caster = caster.Tick().ExhaustTurn();
       return combatState.CloneWith(caster);
@@ -64,12 +64,12 @@ public class CombatState
       int? amount = null;
       if (spell.IsOverTime)
       {
-         log?.CastSpell(caster, target, spell);
+         log?.LogCastSpell(caster, target, spell);
       }
       else
       {
          amount = spell.SpellEffect.RollRandomAmount();
-         log?.CastSpell(caster, target, spell, amount);
+         log?.LogCastSpell(caster, target, spell, amount);
       }
 
       
@@ -148,14 +148,14 @@ public class CombatState
    private UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Hit(amount);
-      log?.TakeDamage(target, amount);
+      log?.LogTakeDamage(target, amount);
       return target;
    }
 
    private UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Heal(amount);
-      log?.HealDamage(target, amount);
+      log?.LogHealDamage(target, amount);
       return target;
    }
 
@@ -163,7 +163,7 @@ public class CombatState
    {
       if (Rng.Random.Next(0, 100) <= spell.SpellEffect.CritChance)
       {
-         log?.Crit(spell);
+         log?.LogCrit(spell);
          return true;
       }
 

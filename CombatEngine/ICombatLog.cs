@@ -5,30 +5,30 @@ namespace CombatEngine
 {
    public interface ICombatLog
    {
-      void RoundBegins(int round);
+      void LogRoundBegins(int round);
 
-      void UpkeepBegins();
-      void UpkeepEnds();
+      void LogUpkeepBegins();
+      void LogUpkeepEnds();
 
-      void ReportSides(IEnumerable<UnitState> units);
+      void LogReportSides(IEnumerable<UnitState> units);
 
-      void Turn(UnitState unit);
+      void LogTurn(UnitState unit);
 
-      void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null);
+      void LogCastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null);
 
-      void TakeDamage(UnitState unit, int? amount);
+      void LogTakeDamage(UnitState unit, int? amount);
 
-      void HealDamage(UnitState unit, int? amount);
+      void LogHealDamage(UnitState unit, int? amount);
 
-      void UnitDies(UnitState unit);
+      void LogUnitDies(UnitState unit);
 
-      void Win(Side winningSide);
+      void LogWin(Side winningSide);
 
-      void Winners(IEnumerable<UnitState> winningUnits);
+      void LogWinners(IEnumerable<UnitState> winningUnits);
 
-      void TotalRounds(int totalRounds);
+      void LogTotalRounds(int totalRounds);
 
-      void Crit(Spell spell);
+      void LogCrit(Spell spell);
 
    }
    
