@@ -220,18 +220,23 @@ public class CombatState
          .Select(kvp => kvp.Value)
          .FirstOrDefault(lastUnit);
    }
-   public Side? TryGetWinningSide()
+
+   public bool TryGetWinningSide(out Side result)
    {
+      // TODO: what if both sides are dead?
       var survivingSides = Combatants
          .Where(u => u.Value.Health > 0)
          .GroupBy(u => u.Value.Side)
          .Select(g => g.Key)
          .ToArray();
 
-      if (survivingSides.Length == 1)
+      if (survivingSides.Length != 1)
       {
-         return survivingSides[0];
+         result = default; // don't look here!
+         return false;
       }
-      return null;
+
+      result = survivingSides[0];
+      return true;
    }
 }

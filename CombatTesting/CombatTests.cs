@@ -7,9 +7,7 @@ public class Tests
    [Test]
    public void TestCombatAIDefault()
    {
-      var classBuilder = new ClassBuilder();
-
-      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combatants = FightBuilder.CreateScenario1V1();
       var combat = new CombatState(combatants);
 
       // default depth = 4, maxActions = 100

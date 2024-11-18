@@ -59,7 +59,7 @@ internal class BalanceConsoleOLD
 static IEnumerable<UnitState> RunGameInstance()
    {
       //Rng.ReplaceSeed(new Random().Next());
-      var combatants = FightBuilder.CreateScenario1V1(new ClassBuilder());
+      var combatants = FightBuilder.CreateScenario1V1();
 
       var combat = new CombatState(combatants);
 
@@ -69,6 +69,14 @@ static IEnumerable<UnitState> RunGameInstance()
 
 internal class NullCombatListener : ICombatListener
 {
+   public void CastSpell(UnitKind caster, SpellKind spell)
+   {
+   }
+
+   public void Winners(IEnumerable<UnitState> winningUnits)
+   {
+   }
+
    public void EndOfRound(int round)
    {
    }

@@ -66,18 +66,18 @@ public static class CombatRunner
 
          log.LogReportSides(combatState.GetAliveUnits());
 
-         if (GetWin(combatState, round, log) != null)
+         if (GetWinners(combatState, round, log, out var winners))
          {
-            return combatState.GetAliveUnits();
+            listener.Winners(winners);
+            return winners;
          }
 
          while (TryPerformTurn(combatState, out var newCombatState, strategy, log, listener))
          {
             combatState = newCombatState!;
 
-            if (GetWin(combatState, round, log) != null)
+            if (GetWinners(combatState, round, log, out winners))
             {
-               var winners = combatState.GetAliveUnits().ToArray();
                listener.Winners(winners);
                // todo: use listener instead of return value
                return winners;
@@ -90,17 +90,19 @@ public static class CombatRunner
       }
    }
 
-   public static IEnumerable<UnitState>? GetWin(CombatState combatStateInstance, int round, ICombatLog log)
+   public static bool GetWinners(CombatState combatState, int round, ICombatLog log, out IReadOnlyCollection<UnitState> winners)
    {
-      var winningSide = combatStateInstance.TryGetWinningSide();
-      if (winningSide != null)
+      if (combatState.TryGetWinningSide(out var winningSide))
       {
          log.LogTotalRounds(round);
-         log.LogWin(winningSide.Value);
-         log.LogWinners(combatStateInstance.GetAliveUnits());
-         return combatStateInstance.GetAliveUnits();
+         log.LogWin(winningSide);
+
+         winners = combatState.GetAliveUnits().ToArray();
+         log.LogWinners(winners);
+         return true;
       }
 
-      return null;
+      winners = Array.Empty<UnitState>();
+      return false;
    }
 }
