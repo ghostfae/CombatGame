@@ -14,11 +14,12 @@ public static class CombatRunner
       CombatState combatState, 
       out CombatState? newCombatState,
       INextMoveStrategy strategy,
-      ICombatLog log)
+      ICombatLog log,
+      ICombatListener listener)
    {
       if (combatState.TryGetNextUnit(out var nextUnit))
       {
-         newCombatState = PerformTurn(combatState, nextUnit!, strategy, log);
+         newCombatState = PerformTurn(combatState, nextUnit!, strategy, log, listener);
          return true;
       }
 
@@ -26,7 +27,7 @@ public static class CombatRunner
       return false;
    }
 
-   public static CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatLog log)
+   public static CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatLog log, ICombatListener listener)
    {
       if (!caster.CanAct)
          return combatState;
@@ -41,6 +42,7 @@ public static class CombatRunner
       
       var (target, spell) = nextMove.Value;
       combatState = combatState.CastAndApplySpell(caster, target, spell, log);
+      listener.CastSpell(caster.Unit.Kind, spell.Kind);
 
       if (target.Health <= 0)
       {
@@ -69,13 +71,16 @@ public static class CombatRunner
             return combatState.GetAliveUnits();
          }
 
-         while (TryPerformTurn(combatState, out var newCombatState, strategy, log))
+         while (TryPerformTurn(combatState, out var newCombatState, strategy, log, listener))
          {
             combatState = newCombatState!;
 
             if (GetWin(combatState, round, log) != null)
             {
-               return combatState.GetAliveUnits();
+               var winners = combatState.GetAliveUnits().ToArray();
+               listener.Winners(winners);
+               // todo: use listener instead of return value
+               return winners;
             }
          }
 
