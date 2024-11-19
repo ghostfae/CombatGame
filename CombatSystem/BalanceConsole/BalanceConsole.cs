@@ -1,4 +1,5 @@
-﻿using CombatEngine;
+﻿using System;
+using CombatEngine;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,12 +15,26 @@ internal class BalanceConsole : ICombatListener
 
       var combat = new CombatState(combatants);
 
-      for (int i = 0; i < 5; i++)
+      for (int i = 0; i < 50; i++)
       {
-         CombatRunner.Run(combat, new ConsoleCombatLog(), this); // callback
+         CombatRunner.Run(combat, new ConsoleEmptyLog(), this); // callback
+      }
+
+      Console.WriteLine($"Mage has won {_stats[UnitKind.Mage].Wins} times");
+      Console.WriteLine($"Spells cast are:");
+      foreach (var (spellKind, times) in _stats[UnitKind.Mage].SpellCount)
+      {
+         Console.WriteLine($"{spellKind} has been cast {times} times");
+      }
+
+      Console.WriteLine($"Warrior has won {_stats[UnitKind.Warrior].Wins} times");
+      Console.WriteLine($"Spells cast are:");
+      foreach (var (spellKind, times) in _stats[UnitKind.Warrior].SpellCount)
+      {
+         Console.WriteLine($"{spellKind} has been cast {times} times");
       }
    }
-   
+
    public void CastSpell(UnitKind caster, SpellKind spell)
    {
       GetOrCreateStatsForCaster(caster)

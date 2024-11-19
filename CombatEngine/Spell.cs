@@ -36,7 +36,7 @@ public static class SpellBook
    public static Spell CreateSwordHit()
    {
       return CreateSpell(SpellKind.SwordHit, 0, 
-         SpellEffect.CreateDirectDamage(30, 30, 5, 4),
+         SpellEffect.CreateDirectDamage(30, 30, 5, 2),
          SpellEffect.CreateOverTimeDamage(5, 10, 3));
    }
 
@@ -50,19 +50,19 @@ public static class SpellBook
    public static Spell CreateFrostBolt()
    {
       return CreateSpell(SpellKind.FrostBolt, 0,
-         SpellEffect.CreateDirectDamage(15, 30, 5, 3),
+         SpellEffect.CreateDirectDamage(15, 30, 5, 2),
          SpellEffect.CreateSkipTurn());
    }
    public static Spell CreateFireSnap()
    {
-      return CreateSpell(SpellKind.FireSnap, 3, 
-         SpellEffect.CreateOverTimeDamage(35, 45, 2));
+      return CreateSpell(SpellKind.FireSnap, 5, 
+         SpellEffect.CreateOverTimeDamage(20, 40, 2));
    }
 
    public static Spell CreateHealthPotion()
    {
       return CreateSpell(SpellKind.HealthPotion, 2, 
-         SpellEffect.CreateDirectHeal(8, 10, 10, 2));
+         SpellEffect.CreateDirectHeal(8, 30, 10, 2));
    }
    public static Spell CreateHealthDurationPotion()
    {
