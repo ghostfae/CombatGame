@@ -11,14 +11,14 @@ public static class ClassBuilder
    [
       SpellBook.CreateSwordHit(),
       SpellBook.CreateShieldBash(),
-      SpellBook.CreateHealthPotion()
+      //SpellBook.CreateHealthPotion()
    ];
 
    public static Spell[] MageSpells =
    [
       SpellBook.CreateFrostBolt(),
       SpellBook.CreateFireSnap(),
-      SpellBook.CreateHealthPotion()
+      //SpellBook.CreateHealthPotion()
    ];
 
    public static Dictionary<UnitKind, Spell[]> ClassSpells = new ()
@@ -32,7 +32,7 @@ public static class ClassBuilder
       return new Unit(
          uid: Uid++,
          kind: UnitKind.Warrior,
-         initialHealth: 150,
+         initialHealth: 250,
          speed: 6,
          side: side,
          name: NameGenerator.GenerateName(),
@@ -44,7 +44,7 @@ public static class ClassBuilder
       return new Unit(
          uid: Uid++,
          kind: UnitKind.Mage,
-         initialHealth: 100,
+         initialHealth: 200,
          speed: 5,
          side: side,
          name: NameGenerator.GenerateName(),

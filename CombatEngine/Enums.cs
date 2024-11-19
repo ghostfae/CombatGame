@@ -6,8 +6,8 @@
 
 public enum UnitKind
 {
-    Warrior,
-    Mage
+   Warrior,
+   Mage
 }
 
 public enum SpellKind
@@ -26,7 +26,8 @@ public enum SpellKind
 }
 
 public enum Side
-{ 
-    Red,
-    Blue
+{
+   Default,
+   Red,
+   Blue
 }

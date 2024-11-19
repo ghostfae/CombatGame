@@ -190,7 +190,8 @@ public class CombatState
    {
       return Combatants
          .Values
-         .Where(unit => unit.Health > 0);
+         .Where(unit => unit.Health > 0)
+         .ToArray();
    }
 
    public bool TryGetNextUnit(out UnitState? nextUnit)
@@ -223,20 +224,23 @@ public class CombatState
 
    public bool TryGetWinningSide(out Side result)
    {
-      // TODO: what if both sides are dead?
       var survivingSides = Combatants
          .Where(u => u.Value.Health > 0)
          .GroupBy(u => u.Value.Side)
          .Select(g => g.Key)
          .ToArray();
 
-      if (survivingSides.Length != 1)
+      switch (survivingSides.Length)
       {
-         result = default; // don't look here!
-         return false;
+         case 0:
+            result = Side.Default; // draw
+            return true;
+         case 1:
+            result = survivingSides[0];
+            return true;
+         default:
+            result = default; // don't look here!
+            return false;
       }
-
-      result = survivingSides[0];
-      return true;
    }
 }

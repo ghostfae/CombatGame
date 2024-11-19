@@ -66,7 +66,7 @@ public static class CombatRunner
 
          log.LogReportSides(combatState.GetAliveUnits());
 
-         if (GetWinners(combatState, round, log, out var winners))
+         if (TryGetWinners(combatState, round, log, out var winners))
          {
             listener.Winners(winners);
             return winners;
@@ -76,7 +76,7 @@ public static class CombatRunner
          {
             combatState = newCombatState!;
 
-            if (GetWinners(combatState, round, log, out winners))
+            if (TryGetWinners(combatState, round, log, out winners))
             {
                listener.Winners(winners);
                // todo: use listener instead of return value
@@ -90,7 +90,7 @@ public static class CombatRunner
       }
    }
 
-   public static bool GetWinners(CombatState combatState, int round, ICombatLog log, out IReadOnlyCollection<UnitState> winners)
+   public static bool TryGetWinners(CombatState combatState, int round, ICombatLog log, out IReadOnlyCollection<UnitState> winners)
    {
       if (combatState.TryGetWinningSide(out var winningSide))
       {

@@ -36,27 +36,27 @@ public static class SpellBook
    public static Spell CreateSwordHit()
    {
       return CreateSpell(SpellKind.SwordHit, 0, 
-         SpellEffect.CreateDirectDamage(30, 30, 5, 2),
+         SpellEffect.CreateDirectDamage(25, 30, 5, 2),
          SpellEffect.CreateOverTimeDamage(5, 10, 3));
    }
 
    public static Spell CreateShieldBash()
    {
-      return CreateSpell(SpellKind.ShieldBash, 3, 
-         SpellEffect.CreateDirectDamage(5, 15, 5, 2),
+      return CreateSpell(SpellKind.ShieldBash, 6,
+         SpellEffect.CreateDirectDamage(30, 45, 5, 2),
          SpellEffect.CreateSkipTurn());
    }
 
    public static Spell CreateFrostBolt()
    {
       return CreateSpell(SpellKind.FrostBolt, 0,
-         SpellEffect.CreateDirectDamage(15, 30, 5, 2),
+         SpellEffect.CreateDirectDamage(20, 30, 5, 2),
          SpellEffect.CreateSkipTurn());
    }
    public static Spell CreateFireSnap()
    {
-      return CreateSpell(SpellKind.FireSnap, 5, 
-         SpellEffect.CreateOverTimeDamage(20, 40, 2));
+      return CreateSpell(SpellKind.FireSnap, 4, 
+         SpellEffect.CreateOverTimeDamage(30, 40, 3));
    }
 
    public static Spell CreateHealthPotion()

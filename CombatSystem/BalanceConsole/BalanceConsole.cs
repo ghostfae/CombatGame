@@ -7,6 +7,7 @@ namespace BalanceConsole;
 
 internal class BalanceConsole : ICombatListener
 {
+   private const int NumOfSimRuns = 500;
    private readonly Dictionary<UnitKind, ClassStats> _stats = new();
 
    public void Run()
@@ -15,9 +16,10 @@ internal class BalanceConsole : ICombatListener
 
       var combat = new CombatState(combatants);
 
-      for (int i = 0; i < 50; i++)
+      for (int run = 1; run <= NumOfSimRuns; run++)
       {
          CombatRunner.Run(combat, new ConsoleEmptyLog(), this); // callback
+         Console.WriteLine($"Sim step {run} out of {NumOfSimRuns}");
       }
 
       Console.WriteLine($"Mage has won {_stats[UnitKind.Mage].Wins} times");
@@ -43,6 +45,7 @@ internal class BalanceConsole : ICombatListener
 
    public void Winners(IEnumerable<UnitState> winners)
    {
+      // TODO: count draws
       foreach (var winner in winners)
       {
          GetOrCreateStatsForCaster(winner.Unit.Kind)
