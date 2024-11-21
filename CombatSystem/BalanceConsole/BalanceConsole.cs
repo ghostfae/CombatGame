@@ -16,14 +16,14 @@ internal class BalanceConsole : ICombatListener
       var combatants = FightBuilder.CreateScenario1V1();
 
       var combatState = new CombatState(combatants);
-      var combatRunner = new CombatRunner(new ConsoleEmptyLog());
+      var combatRunner = new CombatRunner(new CombatAI(), new ConsoleEmptyLog(), this);
 
       var stopWatch = new Stopwatch();
       stopWatch.Start();
 
       for (int run = 1; run <= NumOfSimRuns; run++)
       {
-         combatRunner.Run(combatState, this); // callback
+         combatRunner.Run(combatState); // callback
          Console.WriteLine($"Sim step {run} out of {NumOfSimRuns}");
       }
 

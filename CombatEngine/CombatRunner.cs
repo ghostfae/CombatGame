@@ -7,26 +7,9 @@ namespace CombatEngine;
 /// handles unit turns and rounds
 /// </summary>
 ///
-public class CombatRunner(ICombatLog log)
+public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatListener listener)
 {
-   // returns false when end of round
-   public bool TryPerformTurn(
-      CombatState combatState, 
-      out CombatState? newCombatState,
-      INextMoveStrategy strategy,
-      ICombatListener listener)
-   {
-      if (combatState.TryGetNextUnit(out var nextUnit))
-      {
-         newCombatState = PerformTurn(combatState, nextUnit!, strategy, listener);
-         return true;
-      }
-
-      newCombatState = null;
-      return false;
-   }
-
-   public CombatState PerformTurn(CombatState combatState, UnitState caster, INextMoveStrategy strategy, ICombatListener listener)
+   public CombatState PerformTurn(CombatState combatState, UnitState caster)
    {
       if (!caster.CanAct)
          return combatState;
@@ -50,9 +33,8 @@ public class CombatRunner(ICombatLog log)
       return combatState;
    }
 
-   public IEnumerable<UnitState> Run(CombatState combatState, ICombatListener listener)
+   public IEnumerable<UnitState> Run(CombatState combatState)
    {
-      var strategy = new CombatAI();
       int round = 1;
 
       while (true)
@@ -71,7 +53,7 @@ public class CombatRunner(ICombatLog log)
             return winners;
          }
 
-         while (TryPerformTurn(combatState, out var newCombatState, strategy, listener))
+         while (TryPerformTurn(combatState, out var newCombatState))
          {
             combatState = newCombatState!;
 
@@ -89,7 +71,21 @@ public class CombatRunner(ICombatLog log)
       }
    }
 
-   public bool TryGetWinners(CombatState combatState, int round, out IReadOnlyCollection<UnitState> winners)
+   // returns false when end of round
+   private bool TryPerformTurn(
+      CombatState combatState,
+      out CombatState? newCombatState)
+   {
+      if (combatState.TryGetNextUnit(out var nextUnit))
+      {
+         newCombatState = PerformTurn(combatState, nextUnit!);
+         return true;
+      }
+
+      newCombatState = null;
+      return false;
+   }
+   private bool TryGetWinners(CombatState combatState, int round, out IReadOnlyCollection<UnitState> winners)
    {
       if (combatState.TryGetWinningSide(out var winningSide))
       {
