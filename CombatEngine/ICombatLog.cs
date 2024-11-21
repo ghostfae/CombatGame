@@ -1,7 +1,4 @@
-﻿using CombatEngine;
-using System.Collections.Generic;
-
-namespace CombatEngine
+﻿namespace CombatEngine
 {
    public interface ICombatLog
    {
@@ -29,7 +26,5 @@ namespace CombatEngine
       void LogTotalRounds(int totalRounds);
 
       void LogCrit(Spell spell);
-
    }
-   
 }

@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace CombatEngine;
+﻿namespace CombatEngine;
 
 /// <summary>
 /// engine that deals with all the actions taken within combat,
@@ -9,30 +7,6 @@ namespace CombatEngine;
 ///
 public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatListener listener)
 {
-   public CombatState PerformTurn(CombatState combatState, UnitState caster)
-   {
-      if (!caster.CanAct)
-         return combatState;
-
-      combatState = combatState.ExhaustTurn(combatState, caster, log);
-      caster = combatState.Combatants[caster.Unit.Uid];
-
-      var nextMove = strategy.ChooseNextMove(caster, combatState);
-      
-      if (nextMove == null) 
-         return combatState;
-      
-      var (target, spell) = nextMove.Value;
-      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
-      listener.CastSpell(caster.Unit.Kind, spell.Kind);
-
-      if (target.Health <= 0)
-      {
-         log.LogUnitDies(target);
-      }
-      return combatState;
-   }
-
    public IEnumerable<UnitState> Run(CombatState combatState)
    {
       int round = 1;
@@ -42,7 +16,7 @@ public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatLi
          log.LogRoundBegins(round);
 
          log.LogUpkeepBegins();
-         combatState = combatState.Upkeep(log);
+         combatState = combatState.Upkeep();
          log.LogUpkeepEnds();
 
          log.LogReportSides(combatState.GetAliveUnits());
@@ -57,12 +31,10 @@ public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatLi
          {
             combatState = newCombatState!;
 
-            if (TryGetWinners(combatState, round, out winners))
-            {
-               listener.Winners(winners);
-               // todo: use listener instead of return value
-               return winners;
-            }
+            if (!TryGetWinners(combatState, round, out winners)) continue;
+            listener.Winners(winners);
+            // todo: use listener instead of return value
+            return winners;
          }
 
          listener.EndOfRound(round);
@@ -71,6 +43,29 @@ public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatLi
       }
    }
 
+   private CombatState PerformTurn(CombatState combatState, UnitState caster)
+   {
+      if (!caster.CanAct)
+         return combatState;
+
+      combatState = combatState.ExhaustTurn(combatState, caster, log);
+      caster = combatState.Combatants[caster.Unit.Uid];
+
+      var nextMove = strategy.ChooseNextMove(caster, combatState);
+
+      if (nextMove == null)
+         return combatState;
+
+      var (target, spell) = nextMove.Value;
+      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
+      listener.CastSpell(caster.Unit.Kind, spell.Kind);
+
+      if (target.Health <= 0)
+      {
+         log.LogUnitDies(target);
+      }
+      return combatState;
+   }
    // returns false when end of round
    private bool TryPerformTurn(
       CombatState combatState,

@@ -16,7 +16,7 @@ internal class BalanceConsole : ICombatListener
       var combatants = FightBuilder.CreateScenario1V1();
 
       var combatState = new CombatState(combatants);
-      var combatRunner = new CombatRunner(new CombatAI(), new ConsoleEmptyLog(), this);
+      var combatRunner = new CombatRunner(new CombatAi(), new ConsoleEmptyLog(), this);
 
       var stopWatch = new Stopwatch();
       stopWatch.Start();

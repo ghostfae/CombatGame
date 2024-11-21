@@ -9,7 +9,7 @@ public interface ICombatListener
    void EndOfRound(int round);
 }
 
-public class ConsoleCombatListener() : ICombatListener
+public class ConsoleCombatListener : ICombatListener
 {
    public void CastSpell(UnitKind caster, SpellKind spell)
    {

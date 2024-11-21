@@ -52,7 +52,6 @@ public class ConsoleCombatLog : ICombatLog
 
    public void LogCastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
    {
-      //var type = new string("");
 
       if (amount.HasValue && currentSpell.SpellEffect.IsHarm)
       {

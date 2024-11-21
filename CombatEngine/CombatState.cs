@@ -17,7 +17,7 @@ public class CombatState
       Combatants = combatants;
    }
 
-   public CombatState Upkeep(ICombatLog log)
+   public CombatState Upkeep()
    {
       // todo: log upkeep
       var updatedUnits = GetAliveUnits().Select(aliveUnit => aliveUnit.Upkeep());
@@ -82,7 +82,7 @@ public class CombatState
 
       if (spell.IsOverTime)
       {
-         return ApplyOverTimeSpell(target, spell, log);
+         return ApplyOverTimeSpell(target, spell);
       }
       else
       {
@@ -95,22 +95,22 @@ public class CombatState
       if (DetectCrit(spell, log))
       {
          amount *= spell.SpellEffect.CritModifier;
-         target = ApplyCritEffect(target, spell, log); // TODO: how to add this?
+         target = ApplyCritEffect(target, spell);
       }
       return ApplyDirectHitOrHeal(target, spell, amount, log);
    }
 
-   private UnitState ApplyCritEffect(UnitState target, Spell spell, ICombatLog? log)
+   private static UnitState ApplyCritEffect(UnitState target, Spell spell)
    {
       if (spell.CritEffect != null)
       {
          if (spell.CritEffect.Kind == SpellEffectKind.OverTime)
          {
-            return AttachOverTime(target, spell.CritEffect, log);
+            return AttachOverTime(target, spell.CritEffect);
          }
          if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
          {
-            return ApplyFreezeSpell(target, spell.CritEffect, log);
+            return ApplyFreezeSpell(target, spell.CritEffect);
          }
       }
 
@@ -129,46 +129,43 @@ public class CombatState
       }
    }
 
-   private UnitState ApplyOverTimeSpell(UnitState target, Spell spell, ICombatLog? log)
+   private static UnitState ApplyOverTimeSpell(UnitState target, Spell spell)
    {
-      return AttachOverTime(target, spell.SpellEffect, log);
+      return AttachOverTime(target, spell.SpellEffect);
    }
 
-   private UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
+   private static UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell)
    {
       return target.Freeze(spell.Duration!.Value);
       // todo: add log freeze
    }
 
-   private UnitState AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
+   private static UnitState AttachOverTime(UnitState target, SpellEffect effect)
    {
       return target.AttachOverTime(effect);
       // todo: add log overtime
    }
 
-   private UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
+   private static UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Hit(amount);
       log?.LogTakeDamage(target, amount);
       return target;
    }
 
-   private UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
+   private static UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Heal(amount);
       log?.LogHealDamage(target, amount);
       return target;
    }
 
-   private bool DetectCrit(Spell spell, ICombatLog? log)
+   private static bool DetectCrit(Spell spell, ICombatLog? log)
    {
-      if (Rng.Random.Next(0, 100) <= spell.SpellEffect.CritChance)
-      {
-         log?.LogCrit(spell);
-         return true;
-      }
+      if (Rng.Random.Next(0, 100) > spell.SpellEffect.CritChance) return false;
+      log?.LogCrit(spell);
+      return true;
 
-      return false;
    }
 
    public CombatState ResetRound()

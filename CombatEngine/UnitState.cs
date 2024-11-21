@@ -128,8 +128,7 @@ public class UnitState
    public UnitState AttachOverTime(SpellEffect spellEffect)
    {
       return new UnitState(Unit, Side, Health, TimedSpells,
-         new List<TimedOverTimeEffect>(OverTimeEffects)
-            { new(spellEffect) }, 
+         [..OverTimeEffects, new TimedOverTimeEffect(spellEffect)], 
          CanAct, CanActTimer);
    }
 
@@ -160,9 +159,10 @@ public class UnitState
          }
       }
 
-      // TODO: not used
       var overTimeEffects
          = updatedState.OverTimeEffects.Except(elementsToRemove);
+
+      updatedState.OverTimeEffects = overTimeEffects.ToList();
 
       return updatedState;
    }

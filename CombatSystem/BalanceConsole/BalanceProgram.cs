@@ -1,8 +1,8 @@
 ﻿namespace BalanceConsole;
 
-internal static class Program
+internal static class BalanceProgram
 {
-   static void Main(string[] args)
+   private static void Main()
    {
       var console = new BalanceConsole();
       console.Run();

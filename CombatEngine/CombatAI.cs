@@ -1,8 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
-
-public class CombatAI : INextMoveStrategy
+public class CombatAi : INextMoveStrategy
 {
    private const int Depth = 10;
    private const int MaxSimulations = 1000;
@@ -15,15 +13,6 @@ public class CombatAI : INextMoveStrategy
          .Range(0, MaxSimulations)
          .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
          .ToArray(); //todo: remove, only used for debugging
-
-      //var scoredActions = new ConcurrentBag<ScoredAction>();
-
-      //Parallel.ForEach(
-      //   Enumerable.Range(0, MaxSimulations),
-      //   _ =>
-      //   {
-      //      scoredActions.Add(EvaluateChain(combatState, caster, Depth, caster.Side));
-      //   });
 
       var bestAction = scoredActions
          .OrderByDescending(scoredAction => scoredAction.Score)
@@ -95,13 +84,6 @@ public class CombatAI : INextMoveStrategy
          : UnitBehaviour.SelectRandomAlly(allTargets, caster);
 
       return (selectedTarget, selectedSpell);
-   }
-
-   private static void DebugLogCurrentScore((UnitState target, Spell spell) action,
-      UnitState caster, int depth)
-   {
-      Console.WriteLine(
-         $"at depth {depth}: caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}");
    }
 
    private static int CalculateTotalScoreForSide(CombatState state, Side side)

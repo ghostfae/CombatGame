@@ -49,13 +49,13 @@ internal class BalanceCombatLog : ICombatLog
 
    public void LogWinners(IEnumerable<UnitState> winningUnits)
    {
-      string text = "The winner is: ";
+      var text = "The winner is: ";
       var units = winningUnits.ToList();
-      if (units.Count() > 1)
+      if (units.Count > 1)
       {
          text = "The winners are: ";
       }
-      string winners = "";
+      var winners = string.Empty;
       foreach (var unit in units)
       {
          winners += unit.Unit.ToString();

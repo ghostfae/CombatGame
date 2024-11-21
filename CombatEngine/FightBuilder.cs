@@ -17,14 +17,17 @@ public class FightBuilder
       var mage = ClassBuilder.CreateMage(side);
       return (mage.State);
    }
+
    public static UnitState[] CreateScenario1V1() 
    {
        return [AddWarrior(Side.Red), AddMage(Side.Blue)];
    }
+
    public static UnitState[] CreateScenario1V1Warrior()
    {
       return [AddWarrior(Side.Red), AddWarrior(Side.Blue)];
    }
+
    public static UnitState[] CreateScenario2V2()
    {
       return [AddWarrior(Side.Red), AddWarrior(Side.Blue), AddMage(Side.Red), AddMage(Side.Blue)];

@@ -11,7 +11,7 @@ public class Tests
       var combat = new CombatState(combatants);
 
       // default depth = 4, maxActions = 100
-      var ai = new CombatAI();
+      var ai = new CombatAi();
 
       var bestTurn = ai.ChooseNextMove(combatants[0], combat);
       Console.WriteLine($"best turn is to cast {bestTurn!.Value.spell.Kind} at {bestTurn.Value.target.Unit.Name}");
