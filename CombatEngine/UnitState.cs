@@ -156,14 +156,7 @@ public class UnitState
          {
             // TODO: log?
             var amount = item.Effect.RollRandomAmount();
-            if (item.Effect.IsHarm)
-            {
-               updatedState = Hit(amount);
-            }
-            else
-            {
-               updatedState = Heal(amount);
-            }
+            updatedState = item.Effect.IsHarm ? Hit(amount) : Heal(amount);
          }
       }
 
@@ -187,6 +180,12 @@ public class UnitState
    public UnitState Freeze(int duration)
    {
       return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, false, duration);
+   }
+
+   public UnitState Defend()
+   {
+      return new UnitState(Unit, Side, Health, TimedSpells,
+         OverTimeEffects, CanAct, CanActTimer);
    }
 
    public override string ToString()

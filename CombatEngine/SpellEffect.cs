@@ -6,7 +6,8 @@ public enum SpellEffectKind
 {
    Direct,
    OverTime,
-   Freeze
+   Freeze,
+   Defend
 }
 public class SpellEffect
 {
@@ -67,6 +68,12 @@ public class SpellEffect
    {
       return new SpellEffect
          (SpellEffectKind.Freeze, false, 0, 0, 2, 0, 0);
+   }
+
+   public static SpellEffect CreateShield()
+   {
+      return new SpellEffect
+         (SpellEffectKind.Defend, false, 0, 0, 1, 0, 0);
    }
 
    public int RollRandomAmount()

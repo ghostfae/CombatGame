@@ -1,26 +1,35 @@
 ﻿using System;
 using CombatEngine;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BalanceConsole;
 
 internal class BalanceConsole : ICombatListener
 {
-   private const int NumOfSimRuns = 500;
+   private const int NumOfSimRuns = 100;
    private readonly Dictionary<UnitKind, ClassStats> _stats = new();
 
    public void Run()
    {
       var combatants = FightBuilder.CreateScenario1V1();
 
-      var combat = new CombatState(combatants);
+      var combatState = new CombatState(combatants);
+      var combatRunner = new CombatRunner(new ConsoleEmptyLog());
+
+      var stopWatch = new Stopwatch();
+      stopWatch.Start();
 
       for (int run = 1; run <= NumOfSimRuns; run++)
       {
-         CombatRunner.Run(combat, new ConsoleEmptyLog(), this); // callback
+         combatRunner.Run(combatState, this); // callback
          Console.WriteLine($"Sim step {run} out of {NumOfSimRuns}");
       }
+
+      stopWatch.Stop();
+      Console.WriteLine($"Simulation took {stopWatch.ElapsedMilliseconds} ms");
+      Console.WriteLine();
 
       Console.WriteLine($"Mage has won {_stats[UnitKind.Mage].Wins} times");
       Console.WriteLine($"Spells cast are:");

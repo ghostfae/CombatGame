@@ -11,7 +11,7 @@ public static class ClassBuilder
    [
       SpellBook.CreateSwordHit(),
       SpellBook.CreateShieldBash(),
-      //SpellBook.CreateHealthPotion()
+      //SpellBook.CreateShield()
    ];
 
    public static Spell[] MageSpells =

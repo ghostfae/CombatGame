@@ -79,6 +79,7 @@ public class CombatState
    public UnitState ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
    {
       // TODO: apply defences etc
+
       if (spell.IsOverTime)
       {
          return ApplyOverTimeSpell(target, spell, log);

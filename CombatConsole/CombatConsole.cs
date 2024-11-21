@@ -9,8 +9,9 @@ internal class CombatConsole
       //Rng.ReplaceSeed(new Random().Next());
 
       var combatants = FightBuilder.CreateScenario1V1();
-      var combat = new CombatState(combatants);
-      CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
+      var combatState = new CombatState(combatants);
+      var combatRunner = new CombatRunner(new ConsoleCombatLog());
+      combatRunner.Run(combatState, new ConsoleCombatListener());
    }
 }
 

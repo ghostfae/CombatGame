@@ -7,5 +7,4 @@ internal static class Program
       var console = new BalanceConsole();
       console.Run();
    }
-
 }

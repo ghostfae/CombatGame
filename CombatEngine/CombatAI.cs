@@ -1,9 +1,11 @@
-﻿namespace CombatEngine;
+﻿using System.Collections.Concurrent;
+
+namespace CombatEngine;
 
 public class CombatAI : INextMoveStrategy
 {
-   private const int Depth = 6;
-   private const int MaxSimulations = 200;
+   private const int Depth = 10;
+   private const int MaxSimulations = 1000;
    private const int TopSimulationsToAnalyse = MaxSimulations / 10;
 
    public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
@@ -12,11 +14,19 @@ public class CombatAI : INextMoveStrategy
       var scoredActions = Enumerable
          .Range(0, MaxSimulations)
          .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
-         .OrderByDescending(scoredAction => scoredAction.Score)
          .ToArray(); //todo: remove, only used for debugging
 
+      //var scoredActions = new ConcurrentBag<ScoredAction>();
+
+      //Parallel.ForEach(
+      //   Enumerable.Range(0, MaxSimulations),
+      //   _ =>
+      //   {
+      //      scoredActions.Add(EvaluateChain(combatState, caster, Depth, caster.Side));
+      //   });
 
       var bestAction = scoredActions
+         .OrderByDescending(scoredAction => scoredAction.Score)
          .Take(TopSimulationsToAnalyse)
          .GroupBy(scoredAction => scoredAction, ScoredActionComparer.Instance)
          .MaxBy(grouping => grouping.Count())
@@ -94,7 +104,6 @@ public class CombatAI : INextMoveStrategy
          $"at depth {depth}: caster is {caster.Unit.Name}, target is {action.target.Unit.Name}, spell is {action.spell.Kind}");
    }
 
-
    private static int CalculateTotalScoreForSide(CombatState state, Side side)
    {
       // for now, we only take the sum of ally health - sum of enemy health
@@ -150,5 +159,4 @@ public class CombatAI : INextMoveStrategy
          }
       }
    }
-
 }

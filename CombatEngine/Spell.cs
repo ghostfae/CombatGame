@@ -47,6 +47,11 @@ public static class SpellBook
          SpellEffect.CreateSkipTurn());
    }
 
+   public static Spell CreateShield()
+   {
+      return CreateSpell(SpellKind.Shield, 4, SpellEffect.CreateShield());
+   }
+
    public static Spell CreateFrostBolt()
    {
       return CreateSpell(SpellKind.FrostBolt, 0,

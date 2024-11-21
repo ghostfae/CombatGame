@@ -15,6 +15,7 @@ public enum SpellKind
    // warrior spells
    SwordHit,
    ShieldBash,
+   Shield,
 
    // mage spells
    FrostBolt,
