@@ -11,4 +11,4 @@ This is a personal project I have created as a fun way to build on my fundamenta
 TBC
 
 ## Credits
-GreyGear for teaching me and helping to write code
+George-Greymane["https://github.com/George-Greymane"] for teaching me and helping to write code
