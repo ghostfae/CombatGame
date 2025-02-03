@@ -34,8 +34,14 @@ public class Unit
    {
       State = state;
    }
+   public (UnitState, Spell) SelectBestMove(CombatState combat, UnitState self)
+   {
+      var list = CombatAI.SimulateSingleCombat(combat, self);
+      var bestCombo = list.MaxBy(v => v.Score);
+      return (bestCombo.Target, bestCombo.Spell)!;
+   }
 
-   public (UnitState target, Spell spell) ChooseTargetAndSpell(IEnumerable<UnitState> availableTargets)
+   public (UnitState target, Spell spell) ChooseRandomTargetAndSpell(IEnumerable<UnitState> availableTargets)
    {
       var selectedSpell = UnitBehaviour.SelectRandomSpell(State);
       var allTargets = new List<UnitState>();

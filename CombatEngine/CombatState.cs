@@ -2,16 +2,16 @@
 
 public class CombatState
 {
-   private readonly Dictionary<int, UnitState> _combatants;
+   public readonly Dictionary<int, UnitState> Combatants;
 
    public CombatState(IEnumerable<UnitState> combatants)
    {
-      _combatants = combatants.ToDictionary(u => u.Unit.Uid, u => u);
+      Combatants = combatants.ToDictionary(u => u.Unit.Uid, u => u);
    }
 
    private CombatState(Dictionary<int, UnitState> combatants)
    {
-      _combatants = combatants;
+      Combatants = combatants;
    }
 
    public CombatState Upkeep(ICombatLog log)
@@ -34,7 +34,7 @@ public class CombatState
 
    private CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
    {
-      var clone = new Dictionary<int, UnitState>(_combatants);
+      var clone = new Dictionary<int, UnitState>(Combatants);
       foreach (var unit in updatedUnits)
       {
          clone[unit.Unit.Uid] = unit;
@@ -161,7 +161,7 @@ public class CombatState
 
    public void ResetRound()
    {
-      foreach (var unit in _combatants)
+      foreach (var unit in Combatants)
       {
          if (unit.Value.CanAct || unit.Value.CanActTimer == 0)
          {
@@ -172,23 +172,31 @@ public class CombatState
 
    public IEnumerable<UnitState> GetAliveUnits()
    {
-      return _combatants
+      return Combatants
          .Values
          .Where(unit => unit.Health > 0);
    }
 
    public UnitState? TryGetNextUnit()
    {
-      return _combatants
+      return Combatants
          .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
          .OrderByDescending(unit => unit.Value.Unit.Speed)
          .Select(kvp => kvp.Value)
          .FirstOrDefault();
    }
+   public UnitState GetNextUnit()
+   {
+      return Combatants
+         .Where(unit => unit.Value is { Health: > 0 })
+         .OrderByDescending(unit => unit.Value.Unit.Speed)
+         .Select(kvp => kvp.Value)
+         .First();
+   }
 
    public Side? TryGetWinningSide()
    {
-      var survivingSides = _combatants
+      var survivingSides = Combatants
          .Where(u => u.Value.Health > 0)
          .GroupBy(u => u.Value.Side)
          .Select(g => g.Key)
@@ -200,4 +208,5 @@ public class CombatState
       }
       return null;
    }
+
 }

@@ -5,13 +5,17 @@
 /// </summary>
 public static class UnitBehaviour
 {
-   public static Spell SelectRandomSpell(UnitState unit) 
+   public static TimedSpell[] ReadySpells(this UnitState unit)
    {
-      var readySpells = unit.TimedSpells
+      return unit.TimedSpells
          .Where(spell => spell.CooldownTimer == 0)
-         .ToList();
-      var max = readySpells.Count - 1;
-      var randomSelect = Rng.Random.Next(Math.Max(0, max));
+         .ToArray();
+   }
+
+   public static Spell SelectRandomSpell(UnitState unit)
+   {
+      var readySpells = unit.ReadySpells();
+      var randomSelect = Rng.Random.Next(Math.Max(0, readySpells.Length - 1));
       return readySpells[randomSelect].Spell;
    }
 

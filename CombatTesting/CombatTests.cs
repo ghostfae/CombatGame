@@ -10,10 +10,35 @@ public class Tests
    }
 
    [Test]
-   public void TestDamageWorks()
+   public void TestFight()
    {
-      var combatants = FightBuilder.CreateScenario1V1();
-      //var combat = new CombatState(combatants[0], combatants[1]);
-      Assert.Pass();
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
+   }
+
+   [Test]
+   public void TestBestTurn()
+   {
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      var list = CombatAI.SimulateSingleCombat(combat, combatants.First());
+      var bestCombo = list.MaxBy(v => v.Score);
+      Console.WriteLine(bestCombo);
+   }
+
+   [Test]
+   public void TestCombatAI()
+   {
+      var classBuilder = new ClassBuilder();
+
+      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combat = new CombatState(combatants);
+      var best = CombatAI.SimulateCombatChain(combat, combatants.First());
+      Console.WriteLine($"{best.target.Unit}, {best.spell.Kind}");
    }
 }

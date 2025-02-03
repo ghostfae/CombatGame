@@ -11,12 +11,14 @@ public static class CombatRunner
 {
    public static CombatState PerformTurn(CombatState combatState, UnitState caster, ICombatLog log)
    {
+      if (caster.CanAct == false) return combatState;
+
       log.Turn(caster);
 
       caster = caster.Tick().ExhaustTurn();
       combatState = combatState.CloneWith(caster);
 
-      var (target, spell) = caster.Unit.ChooseTargetAndSpell(combatState.GetAliveUnits());
+      var (target, spell) = caster.Unit.SelectBestMove(combatState, caster);
 
       combatState = combatState.CastAndApplySpell(caster, target, spell, log);
 
@@ -26,6 +28,25 @@ public static class CombatRunner
       }
 
       return combatState;
+   }
+
+   public static (CombatState combatState, UnitState target, Spell spell) PerformRandomTurn(CombatState combatState, UnitState caster, ICombatLog log)
+   {
+      log.Turn(caster);
+
+      caster = caster.Tick().ExhaustTurn();
+      combatState = combatState.CloneWith(caster);
+
+      var (target, spell) = caster.Unit.ChooseRandomTargetAndSpell(combatState.GetAliveUnits());
+
+      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
+
+      if (target.Health <= 0)
+      {
+         log.UnitDies(target);
+      }
+
+      return (combatState, target, spell);
    }
 
    public static IEnumerable<UnitState> Run(CombatState combatState, ICombatLog log, ICombatListener listener)
@@ -77,4 +98,6 @@ public static class CombatRunner
 
       return null;
    }
+
+   
 }
