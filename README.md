@@ -3,6 +3,7 @@ A simple combat simulator with two teams of one or two combat units. These units
 
 ## Usage
 The program runs automatically with coded stats, requiring user input (any key) to progress to the next round. It keeps going until one side has achieved victory by wiping out the other team.
+![combat-sim-screenshot](https://github.com/user-attachments/assets/be84f336-7bff-4ced-8d29-4ce7d92ae4f9)
 
 ## Purpose
 This is a personal project I have created as a fun way to build on my fundamental knowledge of C#, as well as learn how and why different patterns are used in practical code. It is inspired by turn-based RPGs, most notably Heroes of Might and Magic 3 as the units are automated instead of controlled. Pokémon and Final Fantasy-style games are also minor influences. I enjoy working with numbers and sums, so I wanted to work with calculating crit chances and the randomised damage amounts.
