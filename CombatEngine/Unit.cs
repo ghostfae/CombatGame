@@ -1,8 +1,8 @@
 ﻿namespace CombatEngine;
+
 /// <summary>
 /// creates the combat unit and the initial state it has before the game starts
 /// </summary>
-
 public class Unit
 {
    public int Uid { get; }
@@ -30,34 +30,6 @@ public class Unit
    {
    }
 
-   public void UpdateState(UnitState state)
-   {
-      State = state;
-   }
-   public (UnitState, Spell) SelectBestMove(CombatState combat, UnitState self)
-   {
-      var list = CombatAI.SimulateSingleCombat(combat, self);
-      var bestCombo = list.MaxBy(v => v.Score);
-      return (bestCombo.Target, bestCombo.Spell)!;
-   }
-
-   public (UnitState target, Spell spell) ChooseRandomTargetAndSpell(IEnumerable<UnitState> availableTargets)
-   {
-      var selectedSpell = UnitBehaviour.SelectRandomSpell(State);
-      var allTargets = new List<UnitState>();
-
-      foreach (var state in availableTargets)
-      {
-         allTargets.Add(state);
-      }
-
-      var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
-         UnitBehaviour.SelectRandomEnemy(allTargets, State) 
-         : UnitBehaviour.SelectRandomAlly(allTargets, State);
-
-      return (selectedTarget, selectedSpell);
-   }
-   
    public override string ToString()
    {
       return $"{Kind} {Name}";

@@ -27,7 +27,7 @@ public static class UnitBehaviour
 
    public static UnitState SelectRandomAlly(IEnumerable<UnitState> availableTargets, UnitState self)
    {
-      var allies = availableTargets.Where(t => t.Side == self.Side).ToArray();
-      return allies[new Random(1).Next(allies.Length)];
+      var allies = availableTargets.Where(t => t.Side == self.Side).Append(self).ToArray();
+      return allies[Rng.Random.Next(allies.Length)];
    }
 }

@@ -1,145 +1,79 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using CombatEngine;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace BalanceConsole;
 
-internal class BalanceConsole
+internal class BalanceConsole : ICombatListener
 {
-   static void Main(string[] args)
+   private const int NumOfSimRuns = 100;
+   private readonly Dictionary<UnitKind, ClassStats> _stats = new();
+
+   public void Run()
    {
-      int mageWins = 0;
-      int warriorWins = 0;
-      int bothWin = 0;
-      int redWin = 0;
-      int blueWin = 0;
+      var combatants = FightBuilder.CreateScenario1V1();
 
-      for (int i = 0; i < 50; i++)
+      var combatState = new CombatState(combatants);
+      var combatRunner = new CombatRunner(new CombatAi(), new ConsoleEmptyLog(), this);
+
+      var stopWatch = new Stopwatch();
+      stopWatch.Start();
+
+      for (int run = 1; run <= NumOfSimRuns; run++)
       {
-         var aliveUnits = RunGameInstance();
-         var enumerable = aliveUnits.ToList();
-
-         if (enumerable.Count() == 1)
-         {
-            if (enumerable.First().Unit.Kind == UnitKind.Mage)
-            {
-               mageWins++;
-            }
-            else
-            {
-               warriorWins++;
-            }
-         }
-         else
-         {
-            bothWin++;
-         }
-
-         if (enumerable.First().Side == Side.Blue)
-         {
-            blueWin++;
-         }
-         else
-         {
-            redWin++;
-         }
+         combatRunner.Run(combatState); // callback
+         Console.WriteLine($"Sim step {run} out of {NumOfSimRuns}");
       }
 
-      Console.WriteLine($"Red win {redWin} times and Blue win {blueWin} times.");
-      Console.WriteLine($"Mages have won {mageWins} times.");
-      Console.WriteLine($"Warriors have won {warriorWins} times.");
-      if (bothWin > 0)
+      stopWatch.Stop();
+      Console.WriteLine($"Simulation took {stopWatch.ElapsedMilliseconds} ms");
+      Console.WriteLine();
+
+      Console.WriteLine($"Mage has won {_stats[UnitKind.Mage].Wins} times");
+      Console.WriteLine($"Spells cast are:");
+      foreach (var (spellKind, times) in _stats[UnitKind.Mage].SpellCount)
       {
-         Console.WriteLine($"Both have won {bothWin} times.");
+         Console.WriteLine($"{spellKind} has been cast {times} times");
+      }
+
+      Console.WriteLine($"Warrior has won {_stats[UnitKind.Warrior].Wins} times");
+      Console.WriteLine($"Spells cast are:");
+      foreach (var (spellKind, times) in _stats[UnitKind.Warrior].SpellCount)
+      {
+         Console.WriteLine($"{spellKind} has been cast {times} times");
       }
    }
 
-
-static IEnumerable<UnitState> RunGameInstance()
+   public void CastSpell(UnitKind caster, SpellKind spell)
    {
-      //Rng.ReplaceSeed(new Random().Next());
-      var combatants = FightBuilder.CreateScenario2V2(new ClassBuilder());
-
-      var combat = new CombatState(combatants);
-
-      return CombatRunner.Run(combat, new NullCombatLog(), new NullCombatListener());
+      GetOrCreateStatsForCaster(caster)
+         .SpellCount[spell]++;
    }
-}
 
-internal class NullCombatListener : ICombatListener
-{
+   public void Winners(IEnumerable<UnitState> winners)
+   {
+      // TODO: count draws
+      foreach (var winner in winners)
+      {
+         GetOrCreateStatsForCaster(winner.Unit.Kind)
+            .Wins++;
+      }
+   }
+
    public void EndOfRound(int round)
    {
    }
-}
 
-internal class NullCombatLog : ICombatLog
-{
-   public void RoundBegins(int round)
+   private ClassStats GetOrCreateStatsForCaster(UnitKind caster)
    {
+      return _stats.GetOrCreate(caster, () => CreateStatsForClass(caster));
    }
 
-   public void UpkeepBegins()
+   private static ClassStats CreateStatsForClass(UnitKind caster)
    {
-   }
-
-   public void UpkeepEnds()
-   {
-   }
-
-   public void ReportSides(IEnumerable<UnitState> units)
-   {
-   }
-
-   public void Turn(UnitState unit)
-   {
-   }
-
-   public void CastSpell(UnitState unit, UnitState target, Spell currentSpell, int? amount = null)
-   {
-   }
-
-   public void TakeDamage(UnitState unit, int? amount)
-   {
-   }
-
-   public void HealDamage(UnitState unit, int? amount)
-   {
-   }
-
-   public void UnitDies(UnitState unit)
-   {
-   }
-
-   public void Win(Side winningSide)
-   {
-   }
-
-   public void Winners(IEnumerable<UnitState> winningUnits)
-   {
-      string text = "The winner is: ";
-      var units = winningUnits.ToList();
-      if (units.Count() > 1)
-      {
-         text = "The winners are: ";
-      }
-      string winners = "";
-      foreach (var unit in units)
-      {
-         winners += unit.Unit.ToString();
-      }
-      Console.WriteLine($"{text} {winners}");
-      Console.WriteLine($"{units.First().Side}");
-      Console.WriteLine();
-   }
-
-   public void TotalRounds(int totalRounds)
-   {
-      Console.WriteLine($"In a total of {totalRounds} rounds...");
-   }
-
-   public void Crit(Spell spell)
-   {
+      var spells = ClassBuilder.ClassSpells[caster].Select(s => s.Kind);
+      return new ClassStats(spells);
    }
 }

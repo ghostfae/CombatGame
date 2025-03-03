@@ -2,6 +2,9 @@
 
 public class CombatState
 {
+   /// <summary>
+   /// Combatants by Unit ID including dead Units
+   /// </summary>
    public readonly Dictionary<int, UnitState> Combatants;
 
    public CombatState(IEnumerable<UnitState> combatants)
@@ -14,11 +17,19 @@ public class CombatState
       Combatants = combatants;
    }
 
-   public CombatState Upkeep(ICombatLog log)
+   public CombatState Upkeep()
    {
       // todo: log upkeep
       var updatedUnits = GetAliveUnits().Select(aliveUnit => aliveUnit.Upkeep());
       return CloneWith(updatedUnits);
+   }
+
+   public CombatState ExhaustTurn(CombatState combatState, UnitState caster, ICombatLog log)
+   {
+      log.LogTurn(caster);
+
+      caster = caster.Tick().ExhaustTurn();
+      return combatState.CloneWith(caster);
    }
 
    public CombatState CastAndApplySpell(UnitState caster, UnitState target, Spell spell, ICombatLog log)
@@ -32,7 +43,7 @@ public class CombatState
       return CloneWith(updatedCaster, updatedTarget);
    }
 
-   private CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
+   public CombatState CloneWith(IEnumerable<UnitState> updatedUnits)
    {
       var clone = new Dictionary<int, UnitState>(Combatants);
       foreach (var unit in updatedUnits)
@@ -53,12 +64,12 @@ public class CombatState
       int? amount = null;
       if (spell.IsOverTime)
       {
-         log?.CastSpell(caster, target, spell);
+         log?.LogCastSpell(caster, target, spell);
       }
       else
       {
          amount = spell.SpellEffect.RollRandomAmount();
-         log?.CastSpell(caster, target, spell, amount);
+         log?.LogCastSpell(caster, target, spell, amount);
       }
 
       
@@ -68,9 +79,10 @@ public class CombatState
    public UnitState ApplySpell(UnitState target, Spell spell, int? amount, ICombatLog? log)
    {
       // TODO: apply defences etc
+
       if (spell.IsOverTime)
       {
-         return ApplyOverTimeSpell(target, spell, log);
+         return ApplyOverTimeSpell(target, spell);
       }
       else
       {
@@ -83,22 +95,22 @@ public class CombatState
       if (DetectCrit(spell, log))
       {
          amount *= spell.SpellEffect.CritModifier;
-         target = ApplyCritEffect(target, spell, log); // TODO: how to add this?
+         target = ApplyCritEffect(target, spell);
       }
       return ApplyDirectHitOrHeal(target, spell, amount, log);
    }
 
-   private UnitState ApplyCritEffect(UnitState target, Spell spell, ICombatLog? log)
+   private static UnitState ApplyCritEffect(UnitState target, Spell spell)
    {
       if (spell.CritEffect != null)
       {
          if (spell.CritEffect.Kind == SpellEffectKind.OverTime)
          {
-            return AttachOverTime(target, spell.CritEffect, log);
+            return AttachOverTime(target, spell.CritEffect);
          }
          if (spell.CritEffect.Kind == SpellEffectKind.Freeze)
          {
-            return ApplyFreezeSpell(target, spell.CritEffect, log);
+            return ApplyFreezeSpell(target, spell.CritEffect);
          }
       }
 
@@ -117,55 +129,57 @@ public class CombatState
       }
    }
 
-   private UnitState ApplyOverTimeSpell(UnitState target, Spell spell, ICombatLog? log)
+   private static UnitState ApplyOverTimeSpell(UnitState target, Spell spell)
    {
-      return AttachOverTime(target, spell.SpellEffect, log);
+      return AttachOverTime(target, spell.SpellEffect);
    }
 
-   private UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell, ICombatLog? log)
+   private static UnitState ApplyFreezeSpell(UnitState target, SpellEffect spell)
    {
       return target.Freeze(spell.Duration!.Value);
       // todo: add log freeze
    }
 
-   private UnitState AttachOverTime(UnitState target, SpellEffect effect, ICombatLog? log)
+   private static UnitState AttachOverTime(UnitState target, SpellEffect effect)
    {
       return target.AttachOverTime(effect);
       // todo: add log overtime
    }
 
-   private UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
+   private static UnitState DamageUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Hit(amount);
-      log?.TakeDamage(target, amount);
+      log?.LogTakeDamage(target, amount);
       return target;
    }
 
-   private UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
+   private static UnitState HealUnit(UnitState target, int amount, ICombatLog? log)
    {
       target = target.Heal(amount);
-      log?.HealDamage(target, amount);
+      log?.LogHealDamage(target, amount);
       return target;
    }
 
-   private bool DetectCrit(Spell spell, ICombatLog? log)
+   private static bool DetectCrit(Spell spell, ICombatLog? log)
    {
-      if (Rng.Random.Next(0, 100) <= spell.SpellEffect.CritChance)
-      {
-         log?.Crit(spell);
-         return true;
-      }
+      if (Rng.Random.Next(0, 100) > spell.SpellEffect.CritChance) return false;
+      log?.LogCrit(spell);
+      return true;
 
-      return false;
    }
 
-   public void ResetRound()
+   public CombatState ResetRound()
    {
-      foreach (var unit in Combatants)
+      return CloneWith(ResetCombatants());
+   }
+
+   public IEnumerable<UnitState> ResetCombatants()
+   {
+      foreach (var unit in Combatants.Values)
       {
-         if (unit.Value.CanAct || unit.Value.CanActTimer == 0)
+         if (unit is { Health: > 0, CanActTimer: 0 })
          {
-            unit.Value.ResetRound();
+            yield return unit.ResetRound();
          }
       }
    }
@@ -174,10 +188,20 @@ public class CombatState
    {
       return Combatants
          .Values
-         .Where(unit => unit.Health > 0);
+         .Where(unit => unit.Health > 0)
+         .ToArray();
    }
 
-   public UnitState? TryGetNextUnit()
+   public bool TryGetNextUnit(out UnitState? nextUnit)
+   {
+      nextUnit = GetNextUnitOrDefault();
+      return nextUnit != null;
+   }
+
+   /// <summary>
+   /// returns null when round ends
+   /// </summary>
+   public UnitState? GetNextUnitOrDefault()
    {
       return Combatants
          .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
@@ -185,16 +209,18 @@ public class CombatState
          .Select(kvp => kvp.Value)
          .FirstOrDefault();
    }
-   public UnitState GetNextUnit()
+
+   public UnitState GetNextTurnUnit(UnitState lastUnit)
    {
       return Combatants
-         .Where(unit => unit.Value is { Health: > 0 })
+         .Where(unit => unit.Value is { CanAct: true, Health: > 0 })
          .OrderByDescending(unit => unit.Value.Unit.Speed)
+         .Where(u => u.Key != lastUnit.Unit.Uid)
          .Select(kvp => kvp.Value)
-         .First();
+         .FirstOrDefault(lastUnit);
    }
 
-   public Side? TryGetWinningSide()
+   public bool TryGetWinningSide(out Side result)
    {
       var survivingSides = Combatants
          .Where(u => u.Value.Health > 0)
@@ -202,11 +228,17 @@ public class CombatState
          .Select(g => g.Key)
          .ToArray();
 
-      if (survivingSides.Length == 1)
+      switch (survivingSides.Length)
       {
-         return survivingSides[0];
+         case 0:
+            result = Side.Default; // draw
+            return true;
+         case 1:
+            result = survivingSides[0];
+            return true;
+         default:
+            result = default; // don't look here!
+            return false;
       }
-      return null;
    }
-
 }

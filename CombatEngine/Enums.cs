@@ -6,8 +6,8 @@
 
 public enum UnitKind
 {
-    Warrior,
-    Mage
+   Warrior,
+   Mage
 }
 
 public enum SpellKind
@@ -15,6 +15,7 @@ public enum SpellKind
    // warrior spells
    SwordHit,
    ShieldBash,
+   Shield,
 
    // mage spells
    FrostBolt,
@@ -26,7 +27,8 @@ public enum SpellKind
 }
 
 public enum Side
-{ 
-    Red,
-    Blue
+{
+   Default,
+   Red,
+   Blue
 }

@@ -1,193 +1,144 @@
-﻿using System.Text;
-using System.Xml.Linq;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
-
-public struct Turn(UnitState target, int score, Spell? spell, CombatState newState)
+public class CombatAi : INextMoveStrategy
 {
-   public UnitState Target = target;
-   public int Score = score;
-   public Spell? Spell = spell;
-   public CombatState NewState = newState;
+   private const int Depth = 10;
+   private const int MaxSimulations = 1000;
+   private const int TopSimulationsToAnalyse = MaxSimulations / 10;
 
-   public override string ToString()
+   public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
-      return $"target = {Target}, score = {Score}, spell = {Spell}";
+      // TODO: if no targets or no spells, return null
+      var scoredActions = Enumerable
+         .Range(0, MaxSimulations)
+         .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
+         .ToArray(); //todo: remove, only used for debugging
+
+      var bestAction = scoredActions
+         .OrderByDescending(scoredAction => scoredAction.Score)
+         .Take(TopSimulationsToAnalyse)
+         .GroupBy(scoredAction => scoredAction, ScoredActionComparer.Instance)
+         .MaxBy(grouping => grouping.Count())
+         ?.First();
+
+      return bestAction != null
+         ? (combatState.Combatants[bestAction.TargetUid], bestAction.Spell)
+         : null;
    }
-}
 
-public class AlliesAndEnemies
-{
-   private readonly IReadOnlyDictionary<bool, UnitState[]> _combatants;
-
-   public UnitState[]? Allies => _combatants.GetValueOrDefault(true);
-   public UnitState[]? Enemies=> _combatants.GetValueOrDefault(false);
-
-   private AlliesAndEnemies(IReadOnlyDictionary<bool, UnitState[]> combatants)
+   public int GetAverage(int[] scores)
    {
-      _combatants = combatants;
+      return scores.Sum() / scores.Length;
    }
 
-   public static AlliesAndEnemies Create(Side side, CombatState combatState)
+   public ScoredAction EvaluateChain(
+      CombatState combatState,
+      UnitState caster,
+      int depth,
+      Side initSide)
    {
-      var combatants = combatState
-         .GetAliveUnits()
-         .GroupBy(unit => unit.Side == side)
-         .ToDictionary(g => g.Key, g => g.ToArray());
-      return new AlliesAndEnemies(combatants);
-   }
-}
+      var firstCasterAction = ChooseRandomTargetAndSpell(caster, combatState.GetAliveUnits());
 
-public static class CombatAI
-{
-   public static IEnumerable<(UnitState target, Spell spell)> GetPossibleActions(CombatState combatState, UnitState caster)
-   {
-      var alliesAndEnemies = AlliesAndEnemies.Create(caster.Side, combatState);
+      var currentAction = firstCasterAction;
+      var currentCaster = caster;
 
-      foreach (var spell in caster.ReadySpells())
+      while (depth > 0)
       {
-         // helpful and harmful spells should be treated differently
+         combatState = ApplyTurn(currentAction, combatState, currentCaster, ConsoleEmptyLog.Instance);
 
-         switch (spell.Spell.SpellEffect.IsHarm)
+         //DebugLogCurrentScore(currentAction, currentCaster, depth);
+         currentCaster = combatState.GetNextTurnUnit(currentCaster);
+
+         if (GetWin(combatState.Combatants.Values, currentCaster))
+            break;
+
+         currentAction = ChooseRandomTargetAndSpell(currentCaster, combatState.GetAliveUnits());
+         depth--;
+      }
+
+      //Console.WriteLine("End of current chain");
+      // calculate the score and return
+      return new ScoredAction(firstCasterAction.target.Unit.Uid, firstCasterAction.spell,
+         CalculateTotalScoreForSide(combatState, initSide));
+   }
+
+   private static bool GetWin(IEnumerable<UnitState> combatants, UnitState caster)
+   {
+      return combatants
+         .Where(u => u.Health > 0)
+         .All(u => u.Side == caster.Side);
+   }
+
+   private static (UnitState target, Spell spell) ChooseRandomTargetAndSpell(UnitState caster, IEnumerable<UnitState> availableTargets)
+   {
+      var selectedSpell = UnitBehaviour.SelectRandomSpell(caster);
+      var allTargets = new List<UnitState>();
+
+      foreach (var state in availableTargets)
+      {
+         allTargets.Add(state);
+      }
+
+      var selectedTarget = selectedSpell.SpellEffect.IsHarm ? // if operator
+         UnitBehaviour.SelectRandomEnemy(allTargets, caster)
+         : UnitBehaviour.SelectRandomAlly(allTargets, caster);
+
+      return (selectedTarget, selectedSpell);
+   }
+
+   private static int CalculateTotalScoreForSide(CombatState state, Side side)
+   {
+      // for now, we only take the sum of ally health - sum of enemy health
+      return state.Combatants.Values.Sum(unit => unit.Health * (unit.Side == side ? 1 : -1));
+   }
+
+   public CombatState ApplyTurn((UnitState target, Spell spell) action, CombatState combatState, UnitState caster,
+      ICombatLog log)
+   {
+      if (caster.CanAct != true)
+      {
+         if(!combatState.TryGetNextUnit(out var unit))
+            combatState = ResetRound(combatState);
+
+         return combatState;
+      }
+
+      combatState = combatState.ExhaustTurn(combatState, caster, log);
+      caster = combatState.Combatants[caster.Unit.Uid];
+
+      combatState = CastAndApplySpell(combatState, caster, action.target, action.spell, log);
+
+      if (action.target.Health <= 0)
+      {
+         log.LogUnitDies(action.target);
+      }
+
+      return combatState;
+   }
+   public CombatState CastAndApplySpell(CombatState state, UnitState caster, UnitState target, Spell spell, ICombatLog log)
+   {
+      var (damage, updatedCaster) = state.CastSpell(caster, target, spell, log);
+
+      // EXTENSION - have a % cast failed?
+
+      var updatedTarget = state.ApplySpell(target, spell, damage, log);
+
+      return state.CloneWith(updatedCaster, updatedTarget);
+   }
+
+   public CombatState ResetRound(CombatState state)
+   {
+      return state.CloneWith(ResetCombatants(state));
+   }
+
+   public IEnumerable<UnitState> ResetCombatants(CombatState state)
+   {
+      foreach (var unit in state.Combatants.Values)
+      {
+         if (unit.IsAlive() && (unit.CanAct || unit.CanActTimer == 0))
          {
-            case true when alliesAndEnemies.Enemies is { Length: > 0 } enemies:
-            {
-               foreach (var target in enemies)
-                  yield return (target, spell.Spell);
-               break;
-            }
-            case false when alliesAndEnemies.Allies is { Length: > 0 } allies:
-            {
-               foreach (var target in allies)
-                  yield return (target, spell.Spell);
-               break;
-            }
+            yield return unit.ResetRound();
          }
-      }
-   }
-
-
-   public static (UnitState target, Spell spell) SimulateCombatChain(CombatState combatState, UnitState caster)
-   {
-      int maxTests = 10;
-      int depth = 6;
-      var firstCaster = caster;
-      var firstState = combatState;
-      var firstTurns = new List<Turn>();
-
-
-      for (int i = 0; i < maxTests; i++)
-      {
-         var isFirstTurn = true;
-         caster = firstCaster;
-         combatState = firstState;
-
-         for (int x = 0; x < depth; x++)
-         {
-            var scoredTurn = CalculateFinalScores(combatState, caster);
-
-            if (caster.Side != firstCaster.Side)
-            {
-               scoredTurn.Score *= -1;
-            }
-
-            if (isFirstTurn)
-            {
-               firstTurns.Add(scoredTurn);
-               isFirstTurn = false;
-            }
-
-            caster = scoredTurn.NewState.GetNextUnit();
-            combatState = scoredTurn.NewState;
-
-            if (combatState.TryGetWinningSide != null) break;
-         }
-      }
-
-      var best = firstTurns.OrderBy(t => t.Score).First();
-      return (best.Target, best.Spell)!;
-   }
-
-
-   public static List<Turn> SimulateSingleCombat(CombatState combatState, UnitState caster)
-   {
-      var simulatedResults = new List<Turn>();
-      var maxTests = 100;
-      // todo: convert to linq
-      for (int i = 0; i < maxTests; i++)
-      {
-         simulatedResults.Add(CalculateFinalScores(combatState, caster));
-      }
-
-      return simulatedResults;
-   }
-
-   public static int CalculateTotalScore(CombatState oldState, CombatState newState, UnitState caster)
-   {
-      var allies = newState.Combatants.Where(u => u.Value.Side == caster.Side).ToArray();
-
-      var enemies = newState.Combatants.Where(u => u.Value.Side != caster.Side).ToArray();
-
-      int allyDiff = 0;
-      foreach (var ally in allies)
-      {
-         allyDiff += CalculateUnitScore(oldState, newState, ally.Value);
-      }
-
-      int enemyDiff = 0;
-      foreach (var enemy in enemies)
-      {
-         enemyDiff += CalculateUnitScore(oldState, newState, enemy.Value);
-      }
-
-      return allyDiff - enemyDiff;
-   }
-
-   public static int CalculateUnitScore(CombatState oldState, CombatState newState, UnitState unit)
-   {
-      var oldHealth = oldState.Combatants.First(u => u.Key == unit.Unit.Uid).Value.Health;
-      var newHealth = newState.Combatants.First(u => u.Key == unit.Unit.Uid).Value.Health;
-
-      // if health has increased, diff will be positive; if health has decreased, diff will be negative
-      return newHealth - oldHealth;
-   }
-
-   public static Turn CalculateFinalScores(CombatState combatState, UnitState self)
-   {
-      if (self.CanAct == false) return new Turn(combatState.GetNextUnit(), 0, null, combatState);
-
-      var (newState, target, spell) = CombatRunner.PerformRandomTurn(combatState, self, new ConsoleEmptyLog());
-      var score = CalculateTotalScore(combatState, newState, self);
-      return new Turn(target, score, spell, newState);
-   }
-
-   public static int MiniMax(int node, int depth, bool isMaxPlayer, int alpha, int beta) // (UnitState target, int diff) [] scores
-   {
-      if (depth == 0) return node; // return node VALUE
-
-      if (isMaxPlayer)
-      {
-         var bestVal = -1000;
-         for (int i = depth; i >= 0; i--)
-         {
-            var val = MiniMax(node, depth - 1, false, alpha, beta);
-            bestVal = Math.Max(bestVal, val);
-            alpha = Math.Max(alpha, bestVal);
-            if (beta <= alpha) break;
-         }
-         return bestVal;
-      }
-      else
-      {
-         var bestVal = 1000;
-         for (int i = depth; i >= 0; i--)
-         {
-            var val = MiniMax(node, depth - 1, true, alpha, beta);
-            bestVal = Math.Max(bestVal, val);
-            alpha = Math.Max(alpha, bestVal);
-            if (beta <= alpha) break;
-         }
-         return bestVal;
       }
    }
 }

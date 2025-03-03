@@ -4,41 +4,19 @@ namespace CombatTesting;
 
 public class Tests
 {
-   [SetUp]
-   public void Setup()
-   {
-   }
-
    [Test]
-   public void TestFight()
+   public void TestCombatAIDefault()
    {
-      var classBuilder = new ClassBuilder();
-
-      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
+      var combatants = FightBuilder.CreateScenario1V1();
       var combat = new CombatState(combatants);
-      CombatRunner.Run(combat, new ConsoleCombatLog(), new ConsoleCombatListener());
-   }
 
-   [Test]
-   public void TestBestTurn()
-   {
-      var classBuilder = new ClassBuilder();
+      // default depth = 4, maxActions = 100
+      var ai = new CombatAi();
 
-      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
-      var combat = new CombatState(combatants);
-      var list = CombatAI.SimulateSingleCombat(combat, combatants.First());
-      var bestCombo = list.MaxBy(v => v.Score);
-      Console.WriteLine(bestCombo);
-   }
+      var bestTurn = ai.ChooseNextMove(combatants[0], combat);
+      Console.WriteLine($"best turn is to cast {bestTurn!.Value.spell.Kind} at {bestTurn.Value.target.Unit.Name}");
 
-   [Test]
-   public void TestCombatAI()
-   {
-      var classBuilder = new ClassBuilder();
-
-      var combatants = FightBuilder.CreateScenario1V1(classBuilder);
-      var combat = new CombatState(combatants);
-      var best = CombatAI.SimulateCombatChain(combat, combatants.First());
-      Console.WriteLine($"{best.target.Unit}, {best.spell.Kind}");
+      //best turn is ShieldBash on Zila
+      Assert.That(bestTurn.Value.target.Unit.Name == "Zila" && bestTurn.Value.spell.Kind == SpellKind.SwordHit);
    }
 }

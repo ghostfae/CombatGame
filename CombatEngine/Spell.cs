@@ -36,32 +36,38 @@ public static class SpellBook
    public static Spell CreateSwordHit()
    {
       return CreateSpell(SpellKind.SwordHit, 0, 
-         SpellEffect.CreateDirectDamage(10, 10, 5, 4),
+         SpellEffect.CreateDirectDamage(25, 30, 5, 2),
          SpellEffect.CreateOverTimeDamage(5, 10, 3));
    }
 
    public static Spell CreateShieldBash()
    {
-      return CreateSpell(SpellKind.ShieldBash, 3, 
-         SpellEffect.CreateDirectDamage(5, 30, 5, 2));
+      return CreateSpell(SpellKind.ShieldBash, 6,
+         SpellEffect.CreateDirectDamage(30, 45, 5, 2),
+         SpellEffect.CreateSkipTurn());
+   }
+
+   public static Spell CreateShield()
+   {
+      return CreateSpell(SpellKind.Shield, 4, SpellEffect.CreateShield());
    }
 
    public static Spell CreateFrostBolt()
    {
       return CreateSpell(SpellKind.FrostBolt, 0,
-         SpellEffect.CreateDirectDamage(10, 10, 5, 3),
+         SpellEffect.CreateDirectDamage(20, 30, 5, 2),
          SpellEffect.CreateSkipTurn());
    }
    public static Spell CreateFireSnap()
    {
-      return CreateSpell(SpellKind.FireSnap, 3, 
-         SpellEffect.CreateOverTimeDamage(10, 15, 2));
+      return CreateSpell(SpellKind.FireSnap, 4, 
+         SpellEffect.CreateOverTimeDamage(30, 40, 3));
    }
 
    public static Spell CreateHealthPotion()
    {
       return CreateSpell(SpellKind.HealthPotion, 2, 
-         SpellEffect.CreateDirectHeal(8, 10, 10, 2));
+         SpellEffect.CreateDirectHeal(8, 30, 10, 2));
    }
    public static Spell CreateHealthDurationPotion()
    {

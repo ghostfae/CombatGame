@@ -1,9 +1,12 @@
-﻿namespace CombatEngine;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using CombatEngine;
 
-public class ConsoleEmptyLog : ICombatLog
+namespace BalanceConsole;
+
+internal class BalanceCombatLog : ICombatLog
 {
-   public static ConsoleEmptyLog Instance = new ();
-
    public void LogRoundBegins(int round)
    {
    }
@@ -46,10 +49,25 @@ public class ConsoleEmptyLog : ICombatLog
 
    public void LogWinners(IEnumerable<UnitState> winningUnits)
    {
+      var text = "The winner is: ";
+      var units = winningUnits.ToList();
+      if (units.Count > 1)
+      {
+         text = "The winners are: ";
+      }
+      var winners = string.Empty;
+      foreach (var unit in units)
+      {
+         winners += unit.Unit.ToString();
+      }
+      Console.WriteLine($"{text} {winners}");
+      Console.WriteLine($"{units.First().Side}");
+      Console.WriteLine();
    }
 
    public void LogTotalRounds(int totalRounds)
    {
+      Console.WriteLine($"In a total of {totalRounds} rounds...");
    }
 
    public void LogCrit(Spell spell)

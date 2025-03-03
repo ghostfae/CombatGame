@@ -1,82 +1,40 @@
-﻿using System.Text;
-
-namespace CombatEngine;
+﻿namespace CombatEngine;
 
 /// <summary>
 /// engine that deals with all the actions taken within combat,
 /// handles unit turns and rounds
 /// </summary>
 ///
-public static class CombatRunner
+public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatListener listener)
 {
-   public static CombatState PerformTurn(CombatState combatState, UnitState caster, ICombatLog log)
-   {
-      if (caster.CanAct == false) return combatState;
-
-      log.Turn(caster);
-
-      caster = caster.Tick().ExhaustTurn();
-      combatState = combatState.CloneWith(caster);
-
-      var (target, spell) = caster.Unit.SelectBestMove(combatState, caster);
-
-      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
-
-      if (target.Health <= 0)
-      {
-         log.UnitDies(target);
-      }
-
-      return combatState;
-   }
-
-   public static (CombatState combatState, UnitState target, Spell spell) PerformRandomTurn(CombatState combatState, UnitState caster, ICombatLog log)
-   {
-      log.Turn(caster);
-
-      caster = caster.Tick().ExhaustTurn();
-      combatState = combatState.CloneWith(caster);
-
-      var (target, spell) = caster.Unit.ChooseRandomTargetAndSpell(combatState.GetAliveUnits());
-
-      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
-
-      if (target.Health <= 0)
-      {
-         log.UnitDies(target);
-      }
-
-      return (combatState, target, spell);
-   }
-
-   public static IEnumerable<UnitState> Run(CombatState combatState, ICombatLog log, ICombatListener listener)
+   public IEnumerable<UnitState> Run(CombatState combatState)
    {
       int round = 1;
 
       while (true)
       {
-         log.RoundBegins(round);
+         log.LogRoundBegins(round);
 
-         log.UpkeepBegins();
-         combatState = combatState.Upkeep(log);
-         log.UpkeepEnds();
+         log.LogUpkeepBegins();
+         combatState = combatState.Upkeep();
+         log.LogUpkeepEnds();
 
-         log.ReportSides(combatState.GetAliveUnits());
-         if (GetWin(combatState, round, log) != null)
+         log.LogReportSides(combatState.GetAliveUnits());
+
+         if (TryGetWinners(combatState, round, out var winners))
          {
-            return combatState.GetAliveUnits();
+            listener.Winners(winners);
+            return winners;
          }
 
-         var unit = combatState.TryGetNextUnit();
-         while (unit != null)
+         while (TryPerformTurn(combatState, out var newCombatState))
          {
-            combatState = PerformTurn(combatState, unit, log);
-            unit = combatState.TryGetNextUnit();
+            combatState = newCombatState!;
 
-            if (GetWin(combatState, round, log) != null)
-            {
-               return combatState.GetAliveUnits();
-            }
+            if (!TryGetWinners(combatState, round, out winners)) continue;
+            listener.Winners(winners);
+            // todo: use listener instead of return value
+            return winners;
          }
 
          listener.EndOfRound(round);
@@ -85,19 +43,56 @@ public static class CombatRunner
       }
    }
 
-   public static IEnumerable<UnitState>? GetWin(CombatState combatStateInstance, int round, ICombatLog log)
+   private CombatState PerformTurn(CombatState combatState, UnitState caster)
    {
-      var winningSide = combatStateInstance.TryGetWinningSide();
-      if (winningSide != null)
+      if (!caster.CanAct)
+         return combatState;
+
+      combatState = combatState.ExhaustTurn(combatState, caster, log);
+      caster = combatState.Combatants[caster.Unit.Uid];
+
+      var nextMove = strategy.ChooseNextMove(caster, combatState);
+
+      if (nextMove == null)
+         return combatState;
+
+      var (target, spell) = nextMove.Value;
+      combatState = combatState.CastAndApplySpell(caster, target, spell, log);
+      listener.CastSpell(caster.Unit.Kind, spell.Kind);
+
+      if (target.Health <= 0)
       {
-         log.TotalRounds(round);
-         log.Win(winningSide.Value);
-         log.Winners(combatStateInstance.GetAliveUnits());
-         return combatStateInstance.GetAliveUnits();
+         log.LogUnitDies(target);
+      }
+      return combatState;
+   }
+   // returns false when end of round
+   private bool TryPerformTurn(
+      CombatState combatState,
+      out CombatState? newCombatState)
+   {
+      if (combatState.TryGetNextUnit(out var nextUnit))
+      {
+         newCombatState = PerformTurn(combatState, nextUnit!);
+         return true;
       }
 
-      return null;
+      newCombatState = null;
+      return false;
    }
+   private bool TryGetWinners(CombatState combatState, int round, out IReadOnlyCollection<UnitState> winners)
+   {
+      if (combatState.TryGetWinningSide(out var winningSide))
+      {
+         log.LogTotalRounds(round);
+         log.LogWin(winningSide);
 
-   
+         winners = combatState.GetAliveUnits().ToArray();
+         log.LogWinners(winners);
+         return true;
+      }
+
+      winners = Array.Empty<UnitState>();
+      return false;
+   }
 }

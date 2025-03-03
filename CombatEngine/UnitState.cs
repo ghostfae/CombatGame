@@ -1,6 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿namespace CombatEngine;
 
-namespace CombatEngine;
 /// <summary>
 /// state that updates whenever a unit casts or reacts to a spell;
 /// a mutable version of the unit
@@ -14,7 +13,12 @@ public class UnitState
    public int CanActTimer { get; set; }
    public List<TimedOverTimeEffect> OverTimeEffects { get; set; }
    public List<TimedSpell> TimedSpells { get; set; }
-   public bool ResetRound() => CanAct = true;
+
+   public UnitState ResetRound()
+   {
+      return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, true, CanActTimer);
+   }
+
    public static UnitState InitialCreate(Unit unit, Side side, int health)
    {
       return new UnitState(unit, side, health);
@@ -108,11 +112,14 @@ public class UnitState
    {
       var clonedTimedSpells = new List<TimedSpell>(TimedSpells);
       // spellKind is unique within timedSpells
-      var matchingSpell = TimedSpells.First(spell => spell.Spell.Kind == spellKind);
+      var matchingSpell = TimedSpells.FirstOrDefault(spell => spell.Spell.Kind == spellKind);
 
-      clonedTimedSpells.Remove(matchingSpell);
+      if (matchingSpell != null)
+      {
+         clonedTimedSpells.Remove(matchingSpell);
 
-      clonedTimedSpells.Add(matchingSpell.MarkCooldown());
+         clonedTimedSpells.Add(matchingSpell.MarkCooldown());
+      }
 
       return new UnitState(Unit, Side, Health, clonedTimedSpells,
          OverTimeEffects, CanAct, CanActTimer);
@@ -121,8 +128,7 @@ public class UnitState
    public UnitState AttachOverTime(SpellEffect spellEffect)
    {
       return new UnitState(Unit, Side, Health, TimedSpells,
-         new List<TimedOverTimeEffect>(OverTimeEffects)
-            { new(spellEffect) }, 
+         [..OverTimeEffects, new TimedOverTimeEffect(spellEffect)], 
          CanAct, CanActTimer);
    }
 
@@ -149,19 +155,14 @@ public class UnitState
          {
             // TODO: log?
             var amount = item.Effect.RollRandomAmount();
-            if (item.Effect.IsHarm)
-            {
-               updatedState = Hit(amount);
-            }
-            else
-            {
-               updatedState = Heal(amount);
-            }
+            updatedState = item.Effect.IsHarm ? Hit(amount) : Heal(amount);
          }
       }
 
       var overTimeEffects
          = updatedState.OverTimeEffects.Except(elementsToRemove);
+
+      updatedState.OverTimeEffects = overTimeEffects.ToList();
 
       return updatedState;
    }
@@ -178,9 +179,13 @@ public class UnitState
 
    public UnitState Freeze(int duration)
    {
-      CanAct = false;
-      CanActTimer = duration;
-      return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, CanAct, CanActTimer);
+      return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, false, duration);
+   }
+
+   public UnitState Defend()
+   {
+      return new UnitState(Unit, Side, Health, TimedSpells,
+         OverTimeEffects, CanAct, CanActTimer);
    }
 
    public override string ToString()
@@ -189,5 +194,4 @@ public class UnitState
          $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Side)}: {Side}, {nameof(Health)}: {Health}," +
          $"  {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
    }
-
 }

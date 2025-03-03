@@ -6,7 +6,8 @@ public enum SpellEffectKind
 {
    Direct,
    OverTime,
-   Freeze
+   Freeze,
+   Defend
 }
 public class SpellEffect
 {
@@ -21,7 +22,7 @@ public class SpellEffect
    public int? Duration { get; }
 
    /// <summary>
-   /// Crit chance in percents
+   /// LogCrit chance in percents
    /// </summary>
    public int CritChance { get; }
    public int CritModifier { get; }
@@ -67,6 +68,12 @@ public class SpellEffect
    {
       return new SpellEffect
          (SpellEffectKind.Freeze, false, 0, 0, 2, 0, 0);
+   }
+
+   public static SpellEffect CreateShield()
+   {
+      return new SpellEffect
+         (SpellEffectKind.Defend, false, 0, 0, 1, 0, 0);
    }
 
    public int RollRandomAmount()
