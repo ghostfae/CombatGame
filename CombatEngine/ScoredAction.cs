@@ -1,6 +1,10 @@
 ﻿namespace CombatEngine;
 
-// todo: xml docs
+/// <summary>
+/// creates a version of the action that has a 'score' assigned to it
+/// used for ai, to be able to compare the 'best' course of action based on scoring
+/// </summary>
+
 public record ScoredAction(int TargetUid, Spell Spell, int Score)
 { 
 }

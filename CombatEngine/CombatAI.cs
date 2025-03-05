@@ -1,5 +1,10 @@
 ﻿namespace CombatEngine;
 
+/// <summary>
+/// AI that determines the computer's next move;
+/// uses actions with 'scores' and then compares the scores to find the best possible outcome
+/// </summary>
+
 public class CombatAi : INextMoveStrategy
 {
    private const int Depth = 10;
@@ -8,11 +13,14 @@ public class CombatAi : INextMoveStrategy
 
    public (UnitState target, Spell spell)? ChooseNextMove(UnitState caster, CombatState combatState)
    {
-      // TODO: if no targets or no spells, return null
+      if (caster.ReadySpells().Length == 0)
+      {
+         return null;
+      }
+
       var scoredActions = Enumerable
          .Range(0, MaxSimulations)
-         .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side))
-         .ToArray(); //todo: remove, only used for debugging
+         .Select(_ => EvaluateChain(combatState, caster, Depth, caster.Side));
 
       var bestAction = scoredActions
          .OrderByDescending(scoredAction => scoredAction.Score)

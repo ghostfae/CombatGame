@@ -24,7 +24,10 @@ public class UnitState
       return new UnitState(unit, side, health);
    }
 
-   private UnitState(Unit unit, Side side, int health,
+   private UnitState(
+      Unit unit, 
+      Side side, 
+      int health,
       List<TimedSpell> timedSpells,
       List<TimedOverTimeEffect> overTimeEffects, 
       bool canAct, 
@@ -39,6 +42,7 @@ public class UnitState
       CanActTimer = canActTimer;
    }
 
+   // todo: merge with initial create
    private UnitState(Unit unit, Side side, int health)
    {
       Unit = unit;
@@ -137,6 +141,7 @@ public class UnitState
    /// </summary>
    public UnitState UpkeepOverTime()
    {
+      // TODO: simplify this somehow
       if (!OverTimeEffects.Any())
          return this;
 
@@ -182,16 +187,16 @@ public class UnitState
       return new UnitState(Unit, Side, Health, TimedSpells, OverTimeEffects, false, duration);
    }
 
-   public UnitState Defend()
-   {
-      return new UnitState(Unit, Side, Health, TimedSpells,
-         OverTimeEffects, CanAct, CanActTimer);
-   }
+   //public UnitState Defend()
+   //{
+   //   return new UnitState(Unit, Side, Health, TimedSpells,
+   //      OverTimeEffects, CanAct, CanActTimer);
+   //}
 
-   public override string ToString()
-   {
-      return
-         $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Side)}: {Side}, {nameof(Health)}: {Health}," +
-         $"  {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
-   }
+   //public override string ToString()
+   //{
+   //   return
+   //      $"{nameof(Unit.Name)}: {Unit.Name}, {nameof(Side)}: {Side}, {nameof(Health)}: {Health}," +
+   //      $"  {nameof(CanAct)}: {CanAct}, {nameof(CanActTimer)}: {CanActTimer}";
+   //}
 }

@@ -1,4 +1,6 @@
-﻿using CombatEngine;
+﻿using Microsoft.Extensions.DependencyInjection;
+using CombatEngine;
+using System;
 
 namespace CombatConsole;
 
@@ -6,11 +8,22 @@ internal class CombatConsole
 {
    static void Main(string[] args)
    {
-      var combatants = FightBuilder.CreateScenario1V1();
-      var combatState = new CombatState(combatants);
-      var combatRunner = new CombatRunner(new CombatAi(), new ConsoleCombatLog(), new ConsoleCombatListener());
+      var services = new ServiceCollection();
 
-      combatRunner.Run(combatState);
+      services.AddSingleton(_ => FightBuilder.CreateScenario1V1());
+      services.AddTransient<CombatState>();
+      services.AddSingleton<CombatRunner>();
+      services.AddSingleton<INextMoveStrategy, CombatAi>();
+      services.AddSingleton<ICombatLog, ConsoleCombatLog>();
+      services.AddSingleton<ICombatListener, ConsoleCombatListener>();
+
+      var serviceProvider = services.BuildServiceProvider();
+
+      // Resolve dependencies
+      var combatRunner = serviceProvider.GetRequiredService<CombatRunner>();
+
+      // Run the combat simulation
+      combatRunner.Run();
    }
 }
 

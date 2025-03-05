@@ -7,7 +7,7 @@ public class CombatState
    /// </summary>
    public readonly Dictionary<int, UnitState> Combatants;
 
-   public CombatState(IEnumerable<UnitState> combatants)
+   public CombatState(UnitState[] combatants)
    {
       Combatants = combatants.ToDictionary(u => u.Unit.Uid, u => u);
    }
@@ -117,7 +117,7 @@ public class CombatState
       return target;
    }
 
-   private UnitState ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount, ICombatLog? log)
+   private static UnitState ApplyDirectHitOrHeal(UnitState target, Spell spell, int amount, ICombatLog? log)
    {
       if (spell.SpellEffect.IsHarm)
       {

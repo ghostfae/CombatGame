@@ -5,9 +5,9 @@
 /// handles unit turns and rounds
 /// </summary>
 ///
-public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatListener listener)
+public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatListener listener, CombatState combatState)
 {
-   public IEnumerable<UnitState> Run(CombatState combatState)
+   public void Run()
    {
       int round = 1;
 
@@ -24,7 +24,7 @@ public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatLi
          if (TryGetWinners(combatState, round, out var winners))
          {
             listener.Winners(winners);
-            return winners;
+            return;
          }
 
          while (TryPerformTurn(combatState, out var newCombatState))
@@ -33,8 +33,7 @@ public class CombatRunner(INextMoveStrategy strategy, ICombatLog log,  ICombatLi
 
             if (!TryGetWinners(combatState, round, out winners)) continue;
             listener.Winners(winners);
-            // todo: use listener instead of return value
-            return winners;
+            return;
          }
 
          listener.EndOfRound(round);
